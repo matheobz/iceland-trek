@@ -4,7 +4,7 @@ Petite app météo autonome pour le trek Islande. Position GPS + aujourd'hui et 
 suivants, avec verdict de marche basé sur les rafales. Données Open-Meteo (sans clé API).
 Installable sur l'écran d'accueil, et s'ouvre **hors-ligne** en gardant la dernière météo connue.
 
-## Déployer sur Vercel
+## Déployer sur Vercel 
 
 ### Option A — en ligne de commande (le plus rapide)
 ```bash
