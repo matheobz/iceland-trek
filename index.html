@@ -1,0 +1,467 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="theme-color" content="#13171B">
+<title>Mathéo en Islande — météo de marche</title>
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="favicon-32.png" sizes="32x32">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Mathéo en Islande">
+<meta name="description" content="Météo de marche pour le trek Islande — aujourd'hui + 2 jours, focus rafales.">
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --basalt:#13171B;
+    --basalt-2:#1B2228;
+    --panel:#1E262D;
+    --panel-2:#243038;
+    --line:#2E3A43;
+    --ice:#7CDCE8;
+    --moss:#4FB59E;
+    --sand:#E8A24A;
+    --lava:#E2604A;
+    --ink:#EAF1F3;
+    --mute:#8295A0;
+    --mute-2:#5E6F79;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html{-webkit-text-size-adjust:100%}
+  body{
+    background:#ffffff;                /* fond blanc Notion : les coins carrés de l'iframe se fondent dedans */
+    color:var(--ink);
+    font-family:"Inter",system-ui,sans-serif;
+    line-height:1.5;
+    padding:14px;
+  }
+  .wrap{
+    max-width:680px;margin:0 auto;
+    background:
+      radial-gradient(900px 500px at 80% -10%, rgba(124,220,232,.10), transparent 60%),
+      radial-gradient(700px 600px at -10% 110%, rgba(79,181,158,.08), transparent 55%),
+      var(--basalt);
+    border:1px solid #E6E8EB;          /* bord fin et propre côté Notion */
+    border-radius:22px;
+    padding:22px 18px 26px;
+    box-shadow:0 1px 3px rgba(0,0,0,.06), 0 10px 34px rgba(0,0,0,.07);
+    overflow:hidden;                   /* le contenu respecte les coins arrondis */
+  }
+
+  /* ---- header ---- */
+  .top{display:flex;align-items:baseline;justify-content:space-between;gap:12px;flex-wrap:wrap;margin-bottom:4px}
+  .brand{font-family:"Space Grotesk";font-weight:700;font-size:23px;letter-spacing:.01em}
+  .brand .dot{color:var(--ice)}
+  .tag{font-family:"JetBrains Mono";font-size:11px;color:var(--mute);letter-spacing:.08em;text-transform:uppercase}
+  .sub{color:var(--mute);font-size:13px;margin:2px 0 18px}
+
+  /* ---- location bar ---- */
+  .loc{
+    background:var(--panel);border:1px solid var(--line);border-radius:14px;
+    padding:14px;margin-bottom:18px;
+  }
+  .loc-row{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+  .gps{
+    flex:1 1 auto;min-width:160px;display:flex;align-items:center;gap:9px;
+    background:linear-gradient(180deg,var(--panel-2),var(--panel));
+    border:1px solid var(--line);color:var(--ink);
+    font-family:"Inter";font-size:14px;font-weight:600;
+    padding:11px 14px;border-radius:10px;cursor:pointer;transition:border-color .15s,transform .05s;
+  }
+  .gps:hover{border-color:var(--ice)}
+  .gps:active{transform:translateY(1px)}
+  .gps svg{flex:none}
+  .presets{display:flex;gap:7px;flex-wrap:wrap;margin-top:11px}
+  .chip{
+    font-family:"JetBrains Mono";font-size:12px;color:var(--mute);
+    background:var(--basalt-2);border:1px solid var(--line);
+    padding:6px 11px;border-radius:999px;cursor:pointer;transition:.15s;
+  }
+  .chip:hover{color:var(--ink);border-color:var(--moss)}
+  .chip.on{color:var(--basalt);background:var(--ice);border-color:var(--ice);font-weight:700}
+  .stage-label{display:block;font-family:"JetBrains Mono";font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:var(--mute-2);margin:13px 0 6px}
+  .stage-sel{
+    width:100%;background:var(--basalt-2);border:1px solid var(--line);color:var(--ink);
+    font-family:"Inter";font-size:14px;font-weight:500;padding:11px 12px;border-radius:10px;cursor:pointer;
+    appearance:none;-webkit-appearance:none;
+    background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%237CDCE8' stroke-width='2.4'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E");
+    background-repeat:no-repeat;background-position:right 12px center;padding-right:38px;
+  }
+  .stage-sel:focus{outline:2px solid var(--ice);outline-offset:0;border-color:transparent}
+  .stage-sel option{background:var(--panel);color:var(--ink)}
+  .stage-hint{font-family:"JetBrains Mono";font-size:11px;color:var(--mute);margin-top:7px;letter-spacing:.02em}
+  .stage-hint b{color:var(--moss);font-weight:500}
+  .manual{display:flex;gap:7px;margin-top:13px;align-items:center;flex-wrap:wrap;padding-top:13px;border-top:1px solid var(--line)}
+  .manual input{
+    width:108px;background:var(--basalt-2);border:1px solid var(--line);color:var(--ink);
+    font-family:"JetBrains Mono";font-size:13px;padding:9px 10px;border-radius:9px;
+  }
+  .manual input:focus{outline:2px solid var(--ice);outline-offset:0;border-color:transparent}
+  .manual button{
+    background:var(--panel-2);border:1px solid var(--line);color:var(--ink);
+    font-family:"Inter";font-weight:600;font-size:13px;padding:9px 14px;border-radius:9px;cursor:pointer;
+  }
+  .manual button:hover{border-color:var(--ice)}
+  .manual label{font-family:"JetBrains Mono";font-size:11px;color:var(--mute-2)}
+
+  /* ---- states ---- */
+  .state{padding:34px 16px;text-align:center;color:var(--mute)}
+  .state .big{font-family:"Space Grotesk";font-weight:600;color:var(--ink);font-size:17px;margin-bottom:6px}
+  .spinner{width:26px;height:26px;border:3px solid var(--line);border-top-color:var(--ice);border-radius:50%;margin:0 auto 14px;animation:spin .8s linear infinite}
+  @keyframes spin{to{transform:rotate(360deg)}}
+  .placename{font-family:"JetBrains Mono";font-size:12px;color:var(--mute);margin:-6px 0 16px;letter-spacing:.04em}
+  .placename b{color:var(--moss);font-weight:500}
+
+  /* ---- hero / today ---- */
+  .hero{
+    background:linear-gradient(165deg,var(--panel-2),var(--panel));
+    border:1px solid var(--line);border-radius:18px;padding:20px;margin-bottom:14px;position:relative;overflow:hidden;
+  }
+  .hero::before{content:"";position:absolute;inset:0 0 auto 0;height:3px;background:var(--verdict,var(--moss))}
+  .h-eyebrow{font-family:"JetBrains Mono";font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:var(--mute);margin-bottom:3px}
+  .h-date{font-family:"Space Grotesk";font-weight:600;font-size:18px;text-transform:capitalize}
+  .h-cond{display:flex;align-items:center;gap:14px;margin:14px 0 6px}
+  .h-glyph{font-size:46px;line-height:1}
+  .h-temp{font-family:"JetBrains Mono";font-weight:700;font-size:40px;letter-spacing:-.02em}
+  .h-temp .lo{color:var(--mute);font-weight:400;font-size:24px}
+  .h-desc{color:var(--mute);font-size:14px}
+
+  /* verdict band */
+  .verdict{
+    display:flex;align-items:center;gap:12px;margin-top:16px;padding:13px 15px;border-radius:12px;
+    background:var(--basalt-2);border:1px solid var(--vline,var(--line));
+  }
+  .v-icon{width:34px;height:34px;border-radius:9px;display:grid;place-items:center;flex:none;background:var(--verdict);color:var(--basalt)}
+  .v-icon svg{width:19px;height:19px}
+  .v-txt{flex:1}
+  .v-label{font-family:"Space Grotesk";font-weight:700;font-size:15px;color:var(--verdict)}
+  .v-note{font-size:12.5px;color:var(--mute);margin-top:1px}
+
+  /* metric grid */
+  .metrics{display:grid;grid-template-columns:repeat(4,1fr);gap:9px;margin-top:14px}
+  .metric{background:var(--basalt-2);border:1px solid var(--line);border-radius:11px;padding:11px 10px}
+  .m-k{font-family:"JetBrains Mono";font-size:10px;letter-spacing:.06em;text-transform:uppercase;color:var(--mute-2);margin-bottom:5px}
+  .m-v{font-family:"JetBrains Mono";font-weight:700;font-size:17px}
+  .m-u{font-size:11px;color:var(--mute);font-weight:400}
+  .m-v.warn{color:var(--sand)}
+  .m-v.bad{color:var(--lava)}
+
+  /* hourly strip */
+  .hourly{display:flex;gap:7px;overflow-x:auto;margin-top:14px;padding-bottom:4px;scrollbar-width:thin;scrollbar-color:var(--line) transparent}
+  .hourly::-webkit-scrollbar{height:5px}
+  .hourly::-webkit-scrollbar-thumb{background:var(--line);border-radius:3px}
+  .hr{flex:none;width:60px;text-align:center;background:var(--basalt-2);border:1px solid var(--line);border-radius:10px;padding:9px 4px}
+  .hr-t{font-family:"JetBrains Mono";font-size:11px;color:var(--mute);margin-bottom:5px}
+  .hr-g{font-size:18px;line-height:1.2}
+  .hr-temp{font-family:"JetBrains Mono";font-size:13px;font-weight:600;margin-top:4px}
+  .hr-wind{font-family:"JetBrains Mono";font-size:10px;margin-top:3px}
+
+  /* next days */
+  .days{display:grid;gap:11px}
+  .day{
+    display:grid;grid-template-columns:auto 1fr auto;align-items:center;gap:14px;
+    background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:14px 16px;position:relative;
+  }
+  .day::before{content:"";position:absolute;left:0;top:14px;bottom:14px;width:3px;border-radius:3px;background:var(--verdict,var(--moss))}
+  .d-left{padding-left:6px}
+  .d-date{font-family:"Space Grotesk";font-weight:600;font-size:14px;text-transform:capitalize}
+  .d-verdict{font-family:"JetBrains Mono";font-size:10.5px;letter-spacing:.04em;text-transform:uppercase;color:var(--verdict);margin-top:2px}
+  .d-mid{display:flex;align-items:center;gap:10px}
+  .d-glyph{font-size:27px}
+  .d-temp{font-family:"JetBrains Mono";font-weight:700;font-size:16px}
+  .d-temp .lo{color:var(--mute);font-weight:400}
+  .d-right{text-align:right}
+  .d-gust{font-family:"JetBrains Mono";font-weight:700;font-size:17px}
+  .d-gust.warn{color:var(--sand)} .d-gust.bad{color:var(--lava)}
+  .d-glabel{font-family:"JetBrains Mono";font-size:9.5px;letter-spacing:.06em;text-transform:uppercase;color:var(--mute-2);margin-top:2px}
+  .d-precip{font-family:"JetBrains Mono";font-size:11px;color:var(--mute);margin-top:3px}
+
+  .legend{margin-top:20px;font-family:"JetBrains Mono";font-size:11px;color:var(--mute-2);line-height:1.7;letter-spacing:.02em}
+  .legend b{color:var(--moss);font-weight:500}
+  .legend .s{color:var(--sand)} .legend .l{color:var(--lava)}
+  .foot{margin-top:18px;text-align:center;font-family:"JetBrains Mono";font-size:10.5px;color:var(--mute-2);letter-spacing:.04em}
+  .foot a{color:var(--mute)}
+
+  .err{background:rgba(226,96,74,.08);border:1px solid rgba(226,96,74,.35);color:#F0B3A8;border-radius:12px;padding:14px;font-size:13.5px;margin-top:4px}
+
+  @media (max-width:480px){
+    .metrics{grid-template-columns:repeat(2,1fr)}
+    .h-temp{font-size:34px}
+    .day{grid-template-columns:auto 1fr;grid-template-areas:"l r" "m m";gap:10px 14px}
+    .d-left{grid-area:l}.d-right{grid-area:r}.d-mid{grid-area:m}
+  }
+  @media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="top">
+    <div class="brand">Mathéo<span class="dot"> </span>en<span class="dot"> </span>Islande</div>
+    <div style="display:flex;align-items:center;gap:10px">
+      <button id="installBtn" hidden style="font-family:'Inter';font-weight:600;font-size:12px;color:var(--basalt);background:var(--ice);border:none;padding:7px 12px;border-radius:8px;cursor:pointer">Installer</button>
+      <div class="tag">Veður · trek IS</div>
+    </div>
+  </div>
+  <p class="sub">Météo de marche — aujourd'hui + 2 jours. Le vent décide.</p>
+
+  <div class="loc">
+    <div class="loc-row">
+      <button class="gps" id="gpsBtn">
+        <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2v3M12 19v3M2 12h3M19 12h3"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="1.6" fill="currentColor" stroke="none"/></svg>
+        Utiliser ma position
+      </button>
+    </div>
+    <label class="stage-label" for="stageSel">Étape du trek</label>
+    <select id="stageSel" class="stage-sel"><option value="">— choisir une étape (J1 → J22) —</option></select>
+    <div class="stage-hint" id="stageHint" hidden></div>
+    <div class="manual">
+      <label>lat</label><input id="lat" inputmode="decimal" placeholder="64.96">
+      <label>lon</label><input id="lon" inputmode="decimal" placeholder="-19.02">
+      <button id="goManual">Voir</button>
+    </div>
+  </div>
+
+  <div id="place" class="placename" hidden></div>
+  <div id="out"><div class="state"><div class="big">Choisis un point de départ</div>Position GPS, une étape, ou des coordonnées manuelles.</div></div>
+
+  <div class="legend">
+    Seuils rafales (marche) · <b>&lt; 15 m/s on avance</b> · <span class="s">15–20 prudence</span> · <span class="l">&gt; 20 difficile · &gt; 25 on attend</span>
+  </div>
+  <div class="foot">Données <a href="https://open-meteo.com" target="_blank" rel="noopener">Open-Meteo</a> (ICON/ECMWF) · vent en m/s · pour les alertes officielles → <a href="https://en.vedur.is/weather/warnings" target="_blank" rel="noopener">vedur.is</a></div>
+</div>
+
+<script>
+// 22 étapes du trek (10 → 31 août 2026). Coordonnées géocodées depuis les lieux Notion (≈ à quelques km).
+const STAGES = [
+  {j:1, d:"12 août", n:"Reykjavík",                  lat:64.1466, lon:-21.9426},
+  {j:2, d:"13 août", n:"Ísafjörður",                 lat:66.0748, lon:-23.1339},
+  {j:3, d:"14 août", n:"Hornvík",                    lat:66.4300, lon:-22.4500},
+  {j:4, d:"15 août", n:"Hesteyri",                   lat:66.3389, lon:-22.8869},
+  {j:5, d:"16 août", n:"Aðalvík → Ísafjörður",       lat:66.0748, lon:-23.1339},
+  {j:6, d:"17 août", n:"Reykjavík (transition)",     lat:64.1466, lon:-21.9426},
+  {j:7, d:"18 août", n:"Pied de Hekla",              lat:63.9900, lon:-19.7000},
+  {j:8, d:"19 août", n:"Landmannalaugar",            lat:63.9840, lon:-19.0610},
+  {j:9, d:"20 août", n:"Langisjór / Sveinstindur",   lat:64.0500, lon:-18.5000},
+  {j:10,d:"21 août", n:"Skælingar",                  lat:63.9100, lon:-18.6300},
+  {j:11,d:"22 août", n:"Hólaskjól (Eldgjá)",         lat:63.8800, lon:-18.6500},
+  {j:12,d:"23 août", n:"Álftavötn",                  lat:63.7700, lon:-18.5500},
+  {j:13,d:"24 août", n:"Strútur (Strútslaug)",       lat:63.7300, lon:-19.0500},
+  {j:14,d:"25 août", n:"Mælifell (désert noir)",     lat:63.7800, lon:-19.1300},
+  {j:15,d:"26 août", n:"Hvanngil",                   lat:63.8300, lon:-19.2000},
+  {j:16,d:"27 août", n:"Emstrur (Botnar)",           lat:63.7660, lon:-19.3730},
+  {j:17,d:"28 août", n:"Þórsmörk (Langidalur)",      lat:63.6840, lon:-19.5090},
+  {j:18,d:"29 août", n:"Skógar (Fimmvörðuháls)",     lat:63.5320, lon:-19.5110},
+  {j:19,d:"30 août", n:"Reykjavík",                  lat:64.1466, lon:-21.9426},
+  {j:20,d:"31 août", n:"Tampon / Cercle d'Or",       lat:64.3100, lon:-20.3000},
+  {j:21,d:"1ᵉʳ sept.", n:"Reykjavík / Blue Lagoon",  lat:64.1466, lon:-21.9426},
+  {j:22,d:"2 sept.", n:"Keflavík (vol retour)",      lat:63.9850, lon:-22.6056},
+];
+
+const WMO = {
+  0:["Ciel clair","☀️"],1:["Plutôt clair","🌤️"],2:["Éclaircies","⛅"],3:["Couvert","☁️"],
+  45:["Brouillard","🌫️"],48:["Brouillard givrant","🌫️"],
+  51:["Bruine légère","🌦️"],53:["Bruine","🌦️"],55:["Bruine dense","🌧️"],
+  56:["Bruine verglaçante","🌧️"],57:["Bruine verglaçante","🌧️"],
+  61:["Pluie faible","🌧️"],63:["Pluie","🌧️"],65:["Forte pluie","🌧️"],
+  66:["Pluie verglaçante","🌧️"],67:["Pluie verglaçante","🌧️"],
+  71:["Neige faible","🌨️"],73:["Neige","🌨️"],75:["Forte neige","❄️"],77:["Grains de neige","🌨️"],
+  80:["Averses","🌦️"],81:["Averses","🌧️"],82:["Fortes averses","⛈️"],
+  85:["Averses neigeuses","🌨️"],86:["Fortes averses neige","❄️"],
+  95:["Orage","⛈️"],96:["Orage + grêle","⛈️"],99:["Orage violent","⛈️"],
+};
+const wmo = c => WMO[c] || ["—","•"];
+
+// verdict de marche selon rafales (m/s)
+function verdict(g){
+  if(g < 15) return {key:"go",  label:"On avance", note:"Conditions de marche normales.", col:"var(--moss)", line:"rgba(79,181,158,.4)"};
+  if(g < 20) return {key:"mid", label:"Prudence",  note:"Vent soutenu — exposition et gués à surveiller.", col:"var(--sand)", line:"rgba(232,162,74,.4)"};
+  if(g < 25) return {key:"hard",label:"Difficile", note:"Rafales fortes — progression pénible, abrite-toi.", col:"var(--lava)", line:"rgba(226,96,74,.45)"};
+  return {key:"stop",label:"On attend", note:"Rafales dangereuses — reporte si possible.", col:"var(--lava)", line:"rgba(226,96,74,.6)"};
+}
+const V_ICON = {
+  go:'<path d="M5 12l5 5L20 6" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/>',
+  mid:'<path d="M12 3l9 16H3z" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linejoin="round"/><path d="M12 10v4M12 16.5v.4" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/>',
+  hard:'<path d="M12 3l9 16H3z" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linejoin="round"/><path d="M12 10v4M12 16.5v.4" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/>',
+  stop:'<rect x="5" y="5" width="14" height="14" rx="3" fill="none" stroke="currentColor" stroke-width="2.2"/>',
+};
+const DIRS=["N","NNE","NE","ENE","E","ESE","SE","SSE","S","SSO","SO","OSO","O","ONO","NO","NNO"];
+const compass = d => DIRS[Math.round(d/22.5)%16];
+const r = (x,n=0) => x==null ? "—" : x.toFixed(n);
+const cls = g => g>=20 ? "bad" : g>=15 ? "warn" : "";
+
+function fmtDay(iso, i){
+  const d = new Date(iso+"T12:00:00");
+  if(i===0) return "Aujourd'hui";
+  if(i===1) return "Demain";
+  return d.toLocaleDateString("fr-FR",{weekday:"long", day:"numeric", month:"short"});
+}
+
+const out = document.getElementById("out");
+const placeEl = document.getElementById("place");
+
+async function load(lat, lon, name){
+  out.innerHTML = `<div class="state"><div class="spinner"></div>Lecture des conditions…</div>`;
+  placeEl.hidden = true;
+  const u = `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}`
+    + `&daily=weather_code,temperature_2m_max,temperature_2m_min,precipitation_sum,wind_speed_10m_max,wind_gusts_10m_max,wind_direction_10m_dominant`
+    + `&hourly=temperature_2m,weather_code,wind_gusts_10m`
+    + `&wind_speed_unit=ms&timezone=auto&forecast_days=3`;
+  try{
+    const res = await fetch(u);
+    if(!res.ok) throw new Error("HTTP "+res.status);
+    const data = await res.json();
+    try{ localStorage.setItem("lastForecast", JSON.stringify({data,lat,lon,name,ts:Date.now()})); }catch(_){}
+    render(data, lat, lon, name);
+  }catch(e){
+    // hors-ligne : on retombe sur la dernière météo connue si dispo
+    let cached=null;
+    try{ cached = JSON.parse(localStorage.getItem("lastForecast")||"null"); }catch(_){}
+    if(cached && cached.data){
+      const h = Math.round((Date.now()-cached.ts)/3600000);
+      const when = h<1 ? "il y a moins d'1 h" : `il y a ${h} h`;
+      render(cached.data, cached.lat, cached.lon, cached.name);
+      out.insertAdjacentHTML("afterbegin",
+        `<div class="err" style="background:rgba(232,162,74,.08);border-color:rgba(232,162,74,.4);color:#F2C98A">
+        <b>Hors-ligne.</b> Pas de réseau — voici la dernière météo enregistrée (${when}). Relance dès que t'as du signal.</div>`);
+    } else {
+      out.innerHTML = `<div class="err"><b>Pas de données.</b> Pas de réseau et aucune météo en cache. Réessaie dès que t'as du signal (lat ${r(lat,2)}, lon ${r(lon,2)}).</div>`;
+    }
+  }
+}
+
+function render(d, lat, lon, name){
+  const D = d.daily, H = d.hourly;
+  placeEl.hidden = false;
+  placeEl.innerHTML = name
+    ? `Étape · <b>${name}</b>`
+    : `Position · <b>${r(lat,3)}, ${r(lon,3)}</b>`;
+
+  // --- TODAY (hero) ---
+  const v0 = verdict(D.wind_gusts_10m_max[0]);
+  const [desc0,gl0] = wmo(D.weather_code[0]);
+  const gc0 = cls(D.wind_gusts_10m_max[0]);
+
+  // hourly for today
+  const now = new Date();
+  let hourly = "";
+  for(let i=0;i<H.time.length;i++){
+    const t = new Date(H.time[i]);
+    if(t.toDateString()!==now.toDateString()) continue;
+    if(t.getHours()%3!==0) continue;
+    const [,g] = wmo(H.weather_code[i]);
+    const gust = H.wind_gusts_10m[i];
+    const c = gust>=20?"bad":gust>=15?"warn":"";
+    hourly += `<div class="hr"><div class="hr-t">${String(t.getHours()).padStart(2,"0")}h</div>`
+      + `<div class="hr-g">${g}</div>`
+      + `<div class="hr-temp">${r(H.temperature_2m[i])}°</div>`
+      + `<div class="hr-wind ${c}">${r(gust)}<span style="color:var(--mute-2)">m/s</span></div></div>`;
+  }
+
+  let html = `<div class="hero" style="--verdict:${v0.col}">
+    <div class="h-eyebrow">${fmtDay(D.time[0],0)}</div>
+    <div class="h-cond">
+      <div class="h-glyph">${gl0}</div>
+      <div>
+        <div class="h-temp">${r(D.temperature_2m_max[0])}°<span class="lo"> / ${r(D.temperature_2m_min[0])}°</span></div>
+        <div class="h-desc">${desc0}</div>
+      </div>
+    </div>
+    <div class="verdict" style="--vline:${v0.line}">
+      <div class="v-icon" style="--verdict:${v0.col}"><svg viewBox="0 0 24 24">${V_ICON[v0.key]}</svg></div>
+      <div class="v-txt"><div class="v-label">${v0.label}</div><div class="v-note">${v0.note}</div></div>
+    </div>
+    <div class="metrics">
+      <div class="metric"><div class="m-k">Rafales max</div><div class="m-v ${gc0}">${r(D.wind_gusts_10m_max[0])}<span class="m-u"> m/s</span></div></div>
+      <div class="metric"><div class="m-k">Vent moyen</div><div class="m-v ${cls(D.wind_speed_10m_max[0])}">${r(D.wind_speed_10m_max[0])}<span class="m-u"> m/s</span></div></div>
+      <div class="metric"><div class="m-k">Direction</div><div class="m-v">${compass(D.wind_direction_10m_dominant[0])}</div></div>
+      <div class="metric"><div class="m-k">Précip.</div><div class="m-v">${r(D.precipitation_sum[0],1)}<span class="m-u"> mm</span></div></div>
+    </div>
+    <div class="hourly">${hourly||""}</div>
+  </div>`;
+
+  // --- NEXT 2 DAYS ---
+  html += `<div class="days">`;
+  for(let i=1;i<D.time.length;i++){
+    const v = verdict(D.wind_gusts_10m_max[i]);
+    const [desc,gl] = wmo(D.weather_code[i]);
+    html += `<div class="day" style="--verdict:${v.col}">
+      <div class="d-left">
+        <div class="d-date">${fmtDay(D.time[i],i)}</div>
+        <div class="d-verdict">${v.label}</div>
+      </div>
+      <div class="d-mid">
+        <div class="d-glyph">${gl}</div>
+        <div><div class="d-temp">${r(D.temperature_2m_max[i])}°<span class="lo"> / ${r(D.temperature_2m_min[i])}°</span></div>
+        <div class="d-precip">${desc} · ${r(D.precipitation_sum[i],1)} mm</div></div>
+      </div>
+      <div class="d-right">
+        <div class="d-gust ${cls(D.wind_gusts_10m_max[i])}">${r(D.wind_gusts_10m_max[i])}<span style="font-size:11px;color:var(--mute);font-weight:400"> m/s</span></div>
+        <div class="d-glabel">rafales · ${compass(D.wind_direction_10m_dominant[i])}</div>
+      </div>
+    </div>`;
+  }
+  html += `</div>`;
+  out.innerHTML = html;
+}
+
+// --- UI wiring ---
+const stageSel = document.getElementById("stageSel");
+const stageHint = document.getElementById("stageHint");
+STAGES.forEach((s,i)=>{
+  const o = document.createElement("option");
+  o.value = i;
+  o.textContent = `J${s.j} · ${s.d} · ${s.n}`;
+  stageSel.appendChild(o);
+});
+stageSel.onchange = ()=>{
+  const i = stageSel.value;
+  if(i==="") { stageHint.hidden=true; return; }
+  const s = STAGES[i];
+  stageHint.hidden=false;
+  stageHint.innerHTML = `Étape <b>J${s.j}</b> · ${s.d} · ${s.n}`;
+  load(s.lat, s.lon, `J${s.j} · ${s.n}`);
+};
+function resetStage(){ stageSel.value=""; stageHint.hidden=true; }
+
+document.getElementById("gpsBtn").onclick=()=>{
+  resetStage();
+  if(!navigator.geolocation){ out.innerHTML=`<div class="err">Géolocalisation indisponible sur cet appareil. Utilise une étape ou des coordonnées.</div>`; return; }
+  out.innerHTML=`<div class="state"><div class="spinner"></div>Localisation…</div>`;
+  navigator.geolocation.getCurrentPosition(
+    pos=>load(pos.coords.latitude,pos.coords.longitude,null),
+    ()=>{ out.innerHTML=`<div class="err"><b>Position refusée.</b> Autorise la localisation, ou choisis une étape / saisis tes coordonnées.</div>`; },
+    {enableHighAccuracy:true, timeout:10000}
+  );
+};
+
+document.getElementById("goManual").onclick=()=>{
+  const la=parseFloat(document.getElementById("lat").value);
+  const lo=parseFloat(document.getElementById("lon").value);
+  if(isNaN(la)||isNaN(lo)){ out.innerHTML=`<div class="err">Coordonnées invalides. Format décimal, ex. lat <b>64.96</b> / lon <b>-19.02</b>.</div>`; return; }
+  resetStage(); load(la,lo,null);
+};
+document.querySelectorAll(".manual input").forEach(i=>i.addEventListener("keydown",e=>{ if(e.key==="Enter") document.getElementById("goManual").click(); }));
+
+// --- au lancement : si une météo est en cache, on l'affiche direct (utile hors-ligne) ---
+(function(){
+  let c=null; try{ c=JSON.parse(localStorage.getItem("lastForecast")||"null"); }catch(_){}
+  if(c && c.data){ render(c.data, c.lat, c.lon, c.name); }
+})();
+
+// --- PWA : service worker + bouton installer ---
+if("serviceWorker" in navigator){
+  window.addEventListener("load",()=>navigator.serviceWorker.register("sw.js").catch(()=>{}));
+}
+let deferredPrompt=null;
+const installBtn=document.getElementById("installBtn");
+window.addEventListener("beforeinstallprompt",e=>{ e.preventDefault(); deferredPrompt=e; installBtn.hidden=false; });
+installBtn.onclick=async()=>{ if(!deferredPrompt) return; deferredPrompt.prompt(); await deferredPrompt.userChoice; deferredPrompt=null; installBtn.hidden=true; };
+window.addEventListener("appinstalled",()=>{ installBtn.hidden=true; });
+</script>
+</body>
+</html>

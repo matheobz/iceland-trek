@@ -1,0 +1,17 @@
+{
+  "name": "Mathéo en Islande — météo de marche",
+  "short_name": "Mathéo en Islande",
+  "description": "Météo de marche pour le trek Islande — aujourd'hui + 2 jours, focus rafales.",
+  "start_url": ".",
+  "scope": ".",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#13171B",
+  "theme_color": "#13171B",
+  "lang": "fr",
+  "icons": [
+    { "src": "icon-192.png", "sizes": "192x192", "type": "image/png" },
+    { "src": "icon-512.png", "sizes": "512x512", "type": "image/png" },
+    { "src": "icon-maskable.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ]
+}
