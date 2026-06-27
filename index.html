@@ -212,7 +212,7 @@
       </button>
     </div>
     <label class="stage-label" for="stageSel">Étape du trek</label>
-    <select id="stageSel" class="stage-sel"><option value="">— choisir une étape (J1 → J22) —</option></select>
+    <select id="stageSel" class="stage-sel"><option value="">— choisir une étape (J1 → J23) —</option></select>
     <div class="stage-hint" id="stageHint" hidden></div>
     <div class="manual">
       <label>lat</label><input id="lat" inputmode="decimal" placeholder="64.96">
@@ -231,30 +231,32 @@
 </div>
 
 <script>
-// 22 étapes du trek (10 → 31 août 2026). Coordonnées géocodées depuis les lieux Notion (≈ à quelques km).
+// 23 étapes du trek (12 août → 3 sept. 2026). Coordonnées géocodées depuis les lieux Notion (≈ à quelques km).
+// Pour les jours de marche, le point = là où on marche/dort ; pour les jours de transition, la ville de base.
 const STAGES = [
-  {j:1, d:"12 août", n:"Reykjavík",                  lat:64.1466, lon:-21.9426},
-  {j:2, d:"13 août", n:"Ísafjörður",                 lat:66.0748, lon:-23.1339},
-  {j:3, d:"14 août", n:"Hornvík",                    lat:66.4300, lon:-22.4500},
-  {j:4, d:"15 août", n:"Hesteyri",                   lat:66.3389, lon:-22.8869},
-  {j:5, d:"16 août", n:"Aðalvík → Ísafjörður",       lat:66.0748, lon:-23.1339},
-  {j:6, d:"17 août", n:"Reykjavík (transition)",     lat:64.1466, lon:-21.9426},
-  {j:7, d:"18 août", n:"Pied de Hekla",              lat:63.9900, lon:-19.7000},
-  {j:8, d:"19 août", n:"Landmannalaugar",            lat:63.9840, lon:-19.0610},
-  {j:9, d:"20 août", n:"Langisjór / Sveinstindur",   lat:64.0500, lon:-18.5000},
-  {j:10,d:"21 août", n:"Skælingar",                  lat:63.9100, lon:-18.6300},
-  {j:11,d:"22 août", n:"Hólaskjól (Eldgjá)",         lat:63.8800, lon:-18.6500},
-  {j:12,d:"23 août", n:"Álftavötn",                  lat:63.7700, lon:-18.5500},
-  {j:13,d:"24 août", n:"Strútur (Strútslaug)",       lat:63.7300, lon:-19.0500},
-  {j:14,d:"25 août", n:"Mælifell (désert noir)",     lat:63.7800, lon:-19.1300},
-  {j:15,d:"26 août", n:"Hvanngil",                   lat:63.8300, lon:-19.2000},
-  {j:16,d:"27 août", n:"Emstrur (Botnar)",           lat:63.7660, lon:-19.3730},
-  {j:17,d:"28 août", n:"Þórsmörk (Langidalur)",      lat:63.6840, lon:-19.5090},
-  {j:18,d:"29 août", n:"Skógar (Fimmvörðuháls)",     lat:63.5320, lon:-19.5110},
-  {j:19,d:"30 août", n:"Reykjavík",                  lat:64.1466, lon:-21.9426},
-  {j:20,d:"31 août", n:"Tampon / Cercle d'Or",       lat:64.3100, lon:-20.3000},
-  {j:21,d:"1ᵉʳ sept.", n:"Reykjavík / Blue Lagoon",  lat:64.1466, lon:-21.9426},
-  {j:22,d:"2 sept.", n:"Keflavík (vol retour)",      lat:63.9850, lon:-22.6056},
+  {j:1, d:"12 août", n:"Arrivée Keflavík → Reykjavík", lat:64.1466, lon:-21.9426},
+  {j:2, d:"13 août", n:"Vol → Ísafjörður",            lat:66.0748, lon:-23.1339},
+  {j:3, d:"14 août", n:"Hesteyri → Hlöðuvík",         lat:66.4150, lon:-22.6900},
+  {j:4, d:"15 août", n:"Hlöðuvík → Hornvík",          lat:66.4300, lon:-22.4500},
+  {j:5, d:"16 août", n:"Hornvík → ferry → Ísafjörður", lat:66.4300, lon:-22.4500},
+  {j:6, d:"17 août", n:"Vol → Reykjavík (transition)", lat:64.1466, lon:-21.9426},
+  {j:7, d:"18 août", n:"Landmannalaugar (bus + acclim.)", lat:63.9840, lon:-19.0610},
+  {j:8, d:"19 août", n:"Eldgjá / Hólaskjól",          lat:63.8810, lon:-18.6520},
+  {j:9, d:"20 août", n:"Álftavötn",                   lat:63.7900, lon:-18.5300},
+  {j:10,d:"21 août", n:"Strútur (Strútslaug)",        lat:63.7300, lon:-19.0500},
+  {j:11,d:"22 août", n:"Mælifell (désert noir)",      lat:63.7800, lon:-19.1300},
+  {j:12,d:"23 août", n:"Hvanngil",                    lat:63.8300, lon:-19.2000},
+  {j:13,d:"24 août", n:"Emstrur (Botnar)",            lat:63.7660, lon:-19.3730},
+  {j:14,d:"25 août", n:"Þórsmörk (Langidalur)",       lat:63.6840, lon:-19.5090},
+  {j:15,d:"26 août", n:"Repos Þórsmörk",              lat:63.6840, lon:-19.5090},
+  {j:16,d:"27 août", n:"Fimmvörðuháls → Skógar",      lat:63.6328, lon:-19.4453},
+  {j:17,d:"28 août", n:"Vík (sable noir)",            lat:63.4186, lon:-19.0060},
+  {j:18,d:"29 août", n:"Vík → Reykjavík",             lat:64.1466, lon:-21.9426},
+  {j:19,d:"30 août", n:"Snæfellsnes (excursion)",     lat:64.9270, lon:-23.3100},
+  {j:20,d:"31 août", n:"Cercle d'Or (excursion)",     lat:64.3104, lon:-20.3024},
+  {j:21,d:"1ᵉʳ sept.", n:"Chill Reykjavík",           lat:64.1466, lon:-21.9426},
+  {j:22,d:"2 sept.", n:"Reykjavík + Blue Lagoon → vol", lat:64.1466, lon:-21.9426},
+  {j:23,d:"3 sept.", n:"Retour Paris → Nantes",       lat:47.2184, lon:-1.5536},
 ];
 
 const WMO = {
