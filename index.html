@@ -184,6 +184,40 @@
 
   .err{background:rgba(226,96,74,.08);border:1px solid rgba(226,96,74,.35);color:#F0B3A8;border-radius:12px;padding:14px;font-size:13.5px;margin-top:4px}
 
+  /* ---- banners (alertes horaires + gués) ---- */
+  .banner{display:flex;gap:10px;align-items:flex-start;border-radius:12px;padding:12px 14px;margin-bottom:12px;font-size:13px;border:1px solid;line-height:1.45}
+  .banner .bi{font-size:16px;line-height:1.3;flex:none}
+  .banner b{font-weight:600}
+  .banner .sub{opacity:.85}
+  .banner.info{background:rgba(124,220,232,.07);border-color:rgba(124,220,232,.35);color:#bfeaf1}
+  .banner.warn{background:rgba(232,162,74,.08);border-color:rgba(232,162,74,.4);color:#F2C98A}
+  .banner.bad{background:rgba(226,96,74,.09);border-color:rgba(226,96,74,.45);color:#F0B3A8}
+  .banner.go{background:rgba(79,181,158,.08);border-color:rgba(79,181,158,.4);color:#9fded0}
+
+  /* ---- lumière (lever/coucher indicatifs) ---- */
+  .daylight{display:flex;align-items:center;gap:7px;flex-wrap:wrap;margin-top:14px;font-family:"JetBrains Mono";font-size:12px;color:var(--mute);letter-spacing:.02em}
+  .daylight b{color:var(--ice);font-weight:500}
+  .daylight .sg{color:var(--mute-2)}
+
+  /* ---- bouton tout télécharger ---- */
+  .dlbtn{background:var(--panel-2);border:1px solid var(--line);color:var(--ink);font-family:"Inter";font-weight:600;font-size:13px;padding:9px 14px;border-radius:9px;cursor:pointer;transition:border-color .15s}
+  .dlbtn:hover{border-color:var(--ice)}
+  .dlbtn:disabled{opacity:.6;cursor:default}
+  .dlrow{margin-top:13px;padding-top:13px;border-top:1px solid var(--line);display:flex;align-items:center;gap:11px;flex-wrap:wrap}
+  .dlmsg{font-family:"JetBrains Mono";font-size:11px;color:var(--mute-2)}
+
+  /* ---- sécurité & urgences ---- */
+  .safety{margin-top:18px;background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:4px 14px}
+  .safety summary{cursor:pointer;font-family:"Space Grotesk";font-weight:600;font-size:14px;padding:11px 0;list-style:none}
+  .safety summary::-webkit-details-marker{display:none}
+  .safety summary::before{content:"⛑ ";}
+  .safety[open] summary{border-bottom:1px solid var(--line);margin-bottom:10px}
+  .safety-body{font-size:13px;color:var(--mute);line-height:1.7;padding-bottom:12px}
+  .safety-body .em{color:var(--lava);font-weight:600}
+  .safety-body a{color:var(--ice);text-decoration:none}
+  .safety-body a:hover{text-decoration:underline}
+  .safety-body .row{margin-top:6px}
+
   @media (max-width:480px){
     .metrics{grid-template-columns:repeat(2,1fr)}
     .h-temp{font-size:34px}
@@ -219,6 +253,10 @@
       <label>lon</label><input id="lon" inputmode="decimal" placeholder="-19.02">
       <button id="goManual">Voir</button>
     </div>
+    <div class="dlrow">
+      <button id="cacheBtn" class="dlbtn">⤓ Tout télécharger (hors-ligne)</button>
+      <span id="cacheMsg" class="dlmsg"></span>
+    </div>
   </div>
 
   <div id="place" class="placename" hidden></div>
@@ -227,6 +265,17 @@
   <div class="legend">
     Seuils rafales (marche) · <b>&lt; 15 m/s on avance</b> · <span class="s">15–20 prudence</span> · <span class="l">&gt; 20 difficile · &gt; 25 on attend</span>
   </div>
+
+  <details class="safety">
+    <summary>Sécurité &amp; urgences</summary>
+    <div class="safety-body">
+      <div><span class="em">Urgence : 112</span> — installe l'appli <b>112 Iceland</b> (bouton vert = check-in, bouton rouge = SOS avec ta position GPS).</div>
+      <div class="row"><a href="https://safetravel.is" target="_blank" rel="noopener">safetravel.is</a> — enregistre ta trace avant chaque section isolée (Hornstrandir, Fjallabak) et lis les alertes.</div>
+      <div class="row"><a href="https://en.vedur.is/weather/warnings" target="_blank" rel="noopener">vedur.is</a> — alertes météo officielles (vent, tempête).</div>
+      <div class="row"><a href="https://www.road.is/travel-info/road-conditions-and-weather/" target="_blank" rel="noopener">road.is</a> — état des routes &amp; pistes F (bus highland, accès Þórsmörk).</div>
+      <div class="row">Gués : par fort débit, ne traverse jamais seul au-dessus du genou — détache la ceinture du sac, vise large et lent.</div>
+    </div>
+  </details>
   <div class="foot">Données <a href="https://open-meteo.com" target="_blank" rel="noopener">Open-Meteo</a> (ICON/ECMWF) · vent en m/s · pour les alertes officielles → <a href="https://en.vedur.is/weather/warnings" target="_blank" rel="noopener">vedur.is</a></div>
 </div>
 
@@ -234,29 +283,29 @@
 // 23 étapes du trek (12 août → 3 sept. 2026). Coordonnées géocodées depuis les lieux Notion (≈ à quelques km).
 // Pour les jours de marche, le point = là où on marche/dort ; pour les jours de transition, la ville de base.
 const STAGES = [
-  {j:1, d:"12 août", n:"Arrivée Keflavík → Reykjavík", lat:64.1466, lon:-21.9426},
-  {j:2, d:"13 août", n:"Vol → Ísafjörður",            lat:66.0748, lon:-23.1339},
-  {j:3, d:"14 août", n:"Hesteyri → Hlöðuvík",         lat:66.4150, lon:-22.6900},
-  {j:4, d:"15 août", n:"Hlöðuvík → Hornvík",          lat:66.4300, lon:-22.4500},
-  {j:5, d:"16 août", n:"Hornvík → ferry → Ísafjörður", lat:66.4300, lon:-22.4500},
-  {j:6, d:"17 août", n:"Vol → Reykjavík (transition)", lat:64.1466, lon:-21.9426},
-  {j:7, d:"18 août", n:"Landmannalaugar (bus + acclim.)", lat:63.9840, lon:-19.0610},
-  {j:8, d:"19 août", n:"Eldgjá / Hólaskjól",          lat:63.8810, lon:-18.6520},
-  {j:9, d:"20 août", n:"Álftavötn",                   lat:63.7900, lon:-18.5300},
-  {j:10,d:"21 août", n:"Strútur (Strútslaug)",        lat:63.7300, lon:-19.0500},
-  {j:11,d:"22 août", n:"Mælifell (désert noir)",      lat:63.7800, lon:-19.1300},
-  {j:12,d:"23 août", n:"Hvanngil",                    lat:63.8300, lon:-19.2000},
-  {j:13,d:"24 août", n:"Emstrur (Botnar)",            lat:63.7660, lon:-19.3730},
-  {j:14,d:"25 août", n:"Þórsmörk (Langidalur)",       lat:63.6840, lon:-19.5090},
-  {j:15,d:"26 août", n:"Repos Þórsmörk",              lat:63.6840, lon:-19.5090},
-  {j:16,d:"27 août", n:"Fimmvörðuháls → Skógar",      lat:63.6328, lon:-19.4453},
-  {j:17,d:"28 août", n:"Vík (sable noir)",            lat:63.4186, lon:-19.0060},
-  {j:18,d:"29 août", n:"Vík → Reykjavík",             lat:64.1466, lon:-21.9426},
-  {j:19,d:"30 août", n:"Snæfellsnes (excursion)",     lat:64.9270, lon:-23.3100},
-  {j:20,d:"31 août", n:"Cercle d'Or (excursion)",     lat:64.3104, lon:-20.3024},
-  {j:21,d:"1ᵉʳ sept.", n:"Chill Reykjavík",           lat:64.1466, lon:-21.9426},
-  {j:22,d:"2 sept.", n:"Reykjavík + Blue Lagoon → vol", lat:64.1466, lon:-21.9426},
-  {j:23,d:"3 sept.", n:"Retour Paris → Nantes",       lat:47.2184, lon:-1.5536},
+  {j:1, d:"12 août", iso:"2026-08-12", n:"Arrivée Keflavík → Reykjavík", lat:64.1466, lon:-21.9426},
+  {j:2, d:"13 août", iso:"2026-08-13", n:"Vol → Ísafjörður",            lat:66.0748, lon:-23.1339, alert:"Acheter le gaz à Smiðjan (interdit en avion) · vol arrive ~9h · enregistrer la trace sur safetravel.is"},
+  {j:3, d:"14 août", iso:"2026-08-14", n:"Hesteyri → Hlöðuvík",         lat:66.4150, lon:-22.6900, alert:"Ferry Ísafjörður → Hesteyri 09:00 — à reconfirmer la veille"},
+  {j:4, d:"15 août", iso:"2026-08-15", n:"Hlöðuvík → Hornvík",          lat:66.4300, lon:-22.4500},
+  {j:5, d:"16 août", iso:"2026-08-16", n:"Hornvík → ferry → Ísafjörður", lat:66.4300, lon:-22.4500, alert:"Ferry Hornvík → Ísafjörður 15:30 — à ne pas rater"},
+  {j:6, d:"17 août", iso:"2026-08-17", n:"Vol → Reykjavík (transition)", lat:64.1466, lon:-21.9426},
+  {j:7, d:"18 août", iso:"2026-08-18", n:"Landmannalaugar (bus + acclim.)", lat:63.9840, lon:-19.0610, alert:"Bus Reykjavík → Landmannalaugar ~07:00 · dernier ravito gaz/vivres du trek sud"},
+  {j:8, d:"19 août", iso:"2026-08-19", n:"Eldgjá / Hólaskjól",          lat:63.8810, lon:-18.6520, alert:"Grosse étape ~25 km, terrain non balisé — départ tôt, GPS chargé, eau pleine"},
+  {j:9, d:"20 août", iso:"2026-08-20", n:"Álftavötn",                   lat:63.7900, lon:-18.5300},
+  {j:10,d:"21 août", iso:"2026-08-21", n:"Strútur (Strútslaug)",        lat:63.7300, lon:-19.0500, ford:"Gué de la Hólmsá (peut monter à 50-80 cm) — vérifier le niveau avant de traverser"},
+  {j:11,d:"22 août", iso:"2026-08-22", n:"Mælifell (désert noir)",      lat:63.7800, lon:-19.1300, ford:"Gués multiples sur le Mælifellssandur — terrain meuble, allure lente"},
+  {j:12,d:"23 août", iso:"2026-08-23", n:"Hvanngil",                    lat:63.8300, lon:-19.2000},
+  {j:13,d:"24 août", iso:"2026-08-24", n:"Emstrur (Botnar)",            lat:63.7660, lon:-19.3730, ford:"Gué de la Bratthálskvísl en début d'étape"},
+  {j:14,d:"25 août", iso:"2026-08-25", n:"Þórsmörk (Langidalur)",       lat:63.6840, lon:-19.5090, ford:"Gué de la Þröngá avant Langidalur"},
+  {j:15,d:"26 août", iso:"2026-08-26", n:"Repos Þórsmörk",              lat:63.6840, lon:-19.5090, ford:"Accès Stakkholtsgjá = gués profonds — seulement si rivières basses, sinon Tindfjöll"},
+  {j:16,d:"27 août", iso:"2026-08-27", n:"Fimmvörðuháls → Skógar",      lat:63.6328, lon:-19.4453, alert:"Col le plus exposé du trek (~25 km, +1000-1400 m) — départ très tôt, météo critique en altitude"},
+  {j:17,d:"28 août", iso:"2026-08-28", n:"Vík (sable noir)",            lat:63.4186, lon:-19.0060, alert:"Bus Strætó 52 Skógar → Vík (~1/jour, appli Klappið) · Reynisfjara : vagues sournoises, rester loin de l'eau"},
+  {j:18,d:"29 août", iso:"2026-08-29", n:"Vík → Reykjavík",             lat:64.1466, lon:-21.9426, alert:"Bus Strætó 52 Vík → Reykjavík ~2h30-3h (Klappið)"},
+  {j:19,d:"30 août", iso:"2026-08-30", n:"Snæfellsnes (excursion)",     lat:64.9270, lon:-23.3100, alert:"Réserver la veille une fois la météo claire (sans prépaiement)"},
+  {j:20,d:"31 août", iso:"2026-08-31", n:"Cercle d'Or (excursion)",     lat:64.3104, lon:-20.3024, alert:"Réserver la veille (sans prépaiement)"},
+  {j:21,d:"1ᵉʳ sept.", iso:"2026-09-01", n:"Chill Reykjavík",           lat:64.1466, lon:-21.9426},
+  {j:22,d:"2 sept.", iso:"2026-09-02", n:"Reykjavík + Blue Lagoon → vol", lat:64.1466, lon:-21.9426, alert:"Vol Keflavík → Orly 01:10 · finir/jeter le gaz avant l'aéroport · statut Blue Lagoon sur safetravel.is"},
+  {j:23,d:"3 sept.", iso:"2026-09-03", n:"Retour Paris → Nantes",       lat:47.2184, lon:-1.5536, alert:"Atterrissage Orly 06:50, puis Paris → Nantes"},
 ];
 
 const WMO = {
@@ -290,6 +339,8 @@ const DIRS=["N","NNE","NE","ENE","E","ESE","SE","SSE","S","SSO","SO","OSO","O","
 const compass = d => DIRS[Math.round(d/22.5)%16];
 const r = (x,n=0) => x==null ? "—" : x.toFixed(n);
 const cls = g => g>=20 ? "bad" : g>=15 ? "warn" : "";
+const pad = n => String(n).padStart(2,"0");
+const hhmm = iso => iso ? iso.slice(11,16) : "—";   // "2026-08-21T05:30" → "05:30" (heure locale Islande)
 
 function fmtDay(iso, i){
   const d = new Date(iso+"T12:00:00");
@@ -301,50 +352,79 @@ function fmtDay(iso, i){
 const out = document.getElementById("out");
 const placeEl = document.getElementById("place");
 
-async function load(lat, lon, name){
+// past_days=1 → on récupère aussi la veille (pour le risque de gué) ; sunrise/sunset/daylight pour la lumière.
+function buildUrl(lat, lon){
+  return `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}`
+    + `&daily=weather_code,temperature_2m_max,temperature_2m_min,precipitation_sum,wind_speed_10m_max,wind_gusts_10m_max,wind_direction_10m_dominant,sunrise,sunset,daylight_duration`
+    + `&hourly=temperature_2m,weather_code,wind_gusts_10m`
+    + `&wind_speed_unit=ms&timezone=auto&past_days=1&forecast_days=3`;
+}
+
+async function load(lat, lon, name, stageKey, meta){
   out.innerHTML = `<div class="state"><div class="spinner"></div>Lecture des conditions…</div>`;
   placeEl.hidden = true;
-  const u = `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}`
-    + `&daily=weather_code,temperature_2m_max,temperature_2m_min,precipitation_sum,wind_speed_10m_max,wind_gusts_10m_max,wind_direction_10m_dominant`
-    + `&hourly=temperature_2m,weather_code,wind_gusts_10m`
-    + `&wind_speed_unit=ms&timezone=auto&forecast_days=3`;
   try{
-    const res = await fetch(u);
+    const res = await fetch(buildUrl(lat, lon));
     if(!res.ok) throw new Error("HTTP "+res.status);
     const data = await res.json();
-    try{ localStorage.setItem("lastForecast", JSON.stringify({data,lat,lon,name,ts:Date.now()})); }catch(_){}
-    render(data, lat, lon, name);
+    const payload = {data, lat, lon, name, meta:meta||null, ts:Date.now()};
+    try{
+      localStorage.setItem("lastForecast", JSON.stringify(payload));
+      if(stageKey) localStorage.setItem("fc:"+stageKey, JSON.stringify(payload));
+    }catch(_){}
+    render(data, lat, lon, name, meta);
   }catch(e){
-    // hors-ligne : on retombe sur la dernière météo connue si dispo
+    // hors-ligne : cache spécifique à l'étape en priorité, sinon dernière météo connue
     let cached=null;
-    try{ cached = JSON.parse(localStorage.getItem("lastForecast")||"null"); }catch(_){}
+    if(stageKey){ try{ cached = JSON.parse(localStorage.getItem("fc:"+stageKey)||"null"); }catch(_){} }
+    if(!cached){ try{ cached = JSON.parse(localStorage.getItem("lastForecast")||"null"); }catch(_){} }
     if(cached && cached.data){
       const h = Math.round((Date.now()-cached.ts)/3600000);
       const when = h<1 ? "il y a moins d'1 h" : `il y a ${h} h`;
-      render(cached.data, cached.lat, cached.lon, cached.name);
+      render(cached.data, cached.lat, cached.lon, cached.name, cached.meta);
       out.insertAdjacentHTML("afterbegin",
         `<div class="err" style="background:rgba(232,162,74,.08);border-color:rgba(232,162,74,.4);color:#F2C98A">
-        <b>Hors-ligne.</b> Pas de réseau — voici la dernière météo enregistrée (${when}). Relance dès que t'as du signal.</div>`);
+        <b>Hors-ligne.</b> Pas de réseau — voici la météo enregistrée (${when}). Relance dès que t'as du signal.</div>`);
     } else {
-      out.innerHTML = `<div class="err"><b>Pas de données.</b> Pas de réseau et aucune météo en cache. Réessaie dès que t'as du signal (lat ${r(lat,2)}, lon ${r(lon,2)}).</div>`;
+      out.innerHTML = `<div class="err"><b>Pas de données.</b> Pas de réseau et aucune météo en cache. Pense à « Tout télécharger » avant de monter (lat ${r(lat,2)}, lon ${r(lon,2)}).</div>`;
     }
   }
 }
 
-function render(d, lat, lon, name){
+function render(d, lat, lon, name, meta){
   const D = d.daily, H = d.hourly;
   placeEl.hidden = false;
   placeEl.innerHTML = name
     ? `Étape · <b>${name}</b>`
     : `Position · <b>${r(lat,3)}, ${r(lon,3)}</b>`;
 
+  // index d'aujourd'hui (les tableaux commencent la veille à cause de past_days=1)
+  const now = new Date();
+  const todayStr = `${now.getFullYear()}-${pad(now.getMonth()+1)}-${pad(now.getDate())}`;
+  let ti = D.time.indexOf(todayStr);
+  if(ti < 0) ti = D.time.length > 3 ? 1 : 0;   // repli : 2e jour si veille présente, sinon 1er
+
+  // --- BANNERS (rappels horaires + gué) ---
+  let banners = "";
+  if(meta && meta.alert){
+    banners += `<div class="banner warn"><span class="bi">⏰</span><div>${meta.alert}</div></div>`;
+  }
+  if(meta && meta.ford){
+    const rainY = D.precipitation_sum[ti-1]==null ? 0 : D.precipitation_sum[ti-1];
+    const rainT = D.precipitation_sum[ti]==null ? 0 : D.precipitation_sum[ti];
+    const rain48 = rainY + rainT;
+    let fc="go", fm="Pas de pluie marquée récemment — gué a priori praticable.";
+    if(rain48 >= 10){ fc="bad"; fm="Pluie importante sur 48 h — niveau probablement haut, redouble de prudence."; }
+    else if(rain48 >= 3){ fc="warn"; fm="Pluie récente — le niveau peut avoir monté, vérifie avant de traverser."; }
+    banners += `<div class="banner ${fc}"><span class="bi">🌊</span><div><b>Gué :</b> ${meta.ford}<br><span class="sub">${fm} (≈${r(rain48,1)} mm sur 48 h)</span></div></div>`;
+  }
+
   // --- TODAY (hero) ---
-  const v0 = verdict(D.wind_gusts_10m_max[0]);
-  const [desc0,gl0] = wmo(D.weather_code[0]);
-  const gc0 = cls(D.wind_gusts_10m_max[0]);
+  const v0 = verdict(D.wind_gusts_10m_max[ti]);
+  const [desc0,gl0] = wmo(D.weather_code[ti]);
+  const gc0 = cls(D.wind_gusts_10m_max[ti]);
 
   // hourly for today
-  const now = new Date();
   let hourly = "";
   for(let i=0;i<H.time.length;i++){
     const t = new Date(H.time[i]);
@@ -353,18 +433,26 @@ function render(d, lat, lon, name){
     const [,g] = wmo(H.weather_code[i]);
     const gust = H.wind_gusts_10m[i];
     const c = gust>=20?"bad":gust>=15?"warn":"";
-    hourly += `<div class="hr"><div class="hr-t">${String(t.getHours()).padStart(2,"0")}h</div>`
+    hourly += `<div class="hr"><div class="hr-t">${pad(t.getHours())}h</div>`
       + `<div class="hr-g">${g}</div>`
       + `<div class="hr-temp">${r(H.temperature_2m[i])}°</div>`
       + `<div class="hr-wind ${c}">${r(gust)}<span style="color:var(--mute-2)">m/s</span></div></div>`;
   }
 
-  let html = `<div class="hero" style="--verdict:${v0.col}">
-    <div class="h-eyebrow">${fmtDay(D.time[0],0)}</div>
+  // lumière du jour (indicatif)
+  let daylight = "";
+  if(D.daylight_duration && D.daylight_duration[ti]!=null){
+    const sec = D.daylight_duration[ti];
+    const dh = Math.floor(sec/3600), dm = Math.round((sec%3600)/60);
+    daylight = `<div class="daylight">☀ <b>${hhmm(D.sunrise[ti])}</b> → <b>${hhmm(D.sunset[ti])}</b> · ~${dh}h${pad(dm)} de lumière <span class="sg">· lever/coucher indicatifs</span></div>`;
+  }
+
+  let html = banners + `<div class="hero" style="--verdict:${v0.col}">
+    <div class="h-eyebrow">${fmtDay(D.time[ti],0)}</div>
     <div class="h-cond">
       <div class="h-glyph">${gl0}</div>
       <div>
-        <div class="h-temp">${r(D.temperature_2m_max[0])}°<span class="lo"> / ${r(D.temperature_2m_min[0])}°</span></div>
+        <div class="h-temp">${r(D.temperature_2m_max[ti])}°<span class="lo"> / ${r(D.temperature_2m_min[ti])}°</span></div>
         <div class="h-desc">${desc0}</div>
       </div>
     </div>
@@ -373,22 +461,23 @@ function render(d, lat, lon, name){
       <div class="v-txt"><div class="v-label">${v0.label}</div><div class="v-note">${v0.note}</div></div>
     </div>
     <div class="metrics">
-      <div class="metric"><div class="m-k">Rafales max</div><div class="m-v ${gc0}">${r(D.wind_gusts_10m_max[0])}<span class="m-u"> m/s</span></div></div>
-      <div class="metric"><div class="m-k">Vent moyen</div><div class="m-v ${cls(D.wind_speed_10m_max[0])}">${r(D.wind_speed_10m_max[0])}<span class="m-u"> m/s</span></div></div>
-      <div class="metric"><div class="m-k">Direction</div><div class="m-v">${compass(D.wind_direction_10m_dominant[0])}</div></div>
-      <div class="metric"><div class="m-k">Précip.</div><div class="m-v">${r(D.precipitation_sum[0],1)}<span class="m-u"> mm</span></div></div>
+      <div class="metric"><div class="m-k">Rafales max</div><div class="m-v ${gc0}">${r(D.wind_gusts_10m_max[ti])}<span class="m-u"> m/s</span></div></div>
+      <div class="metric"><div class="m-k">Vent moyen</div><div class="m-v ${cls(D.wind_speed_10m_max[ti])}">${r(D.wind_speed_10m_max[ti])}<span class="m-u"> m/s</span></div></div>
+      <div class="metric"><div class="m-k">Direction</div><div class="m-v">${compass(D.wind_direction_10m_dominant[ti])}</div></div>
+      <div class="metric"><div class="m-k">Précip.</div><div class="m-v">${r(D.precipitation_sum[ti],1)}<span class="m-u"> mm</span></div></div>
     </div>
+    ${daylight}
     <div class="hourly">${hourly||""}</div>
   </div>`;
 
   // --- NEXT 2 DAYS ---
   html += `<div class="days">`;
-  for(let i=1;i<D.time.length;i++){
+  for(let i=ti+1;i<D.time.length;i++){
     const v = verdict(D.wind_gusts_10m_max[i]);
     const [desc,gl] = wmo(D.weather_code[i]);
     html += `<div class="day" style="--verdict:${v.col}">
       <div class="d-left">
-        <div class="d-date">${fmtDay(D.time[i],i)}</div>
+        <div class="d-date">${fmtDay(D.time[i],i-ti)}</div>
         <div class="d-verdict">${v.label}</div>
       </div>
       <div class="d-mid">
@@ -421,7 +510,7 @@ stageSel.onchange = ()=>{
   const s = STAGES[i];
   stageHint.hidden=false;
   stageHint.innerHTML = `Étape <b>J${s.j}</b> · ${s.d} · ${s.n}`;
-  load(s.lat, s.lon, `J${s.j} · ${s.n}`);
+  load(s.lat, s.lon, `J${s.j} · ${s.n}`, "stage"+s.j, {ford:s.ford||null, alert:s.alert||null});
 };
 function resetStage(){ stageSel.value=""; stageHint.hidden=true; }
 
@@ -444,10 +533,38 @@ document.getElementById("goManual").onclick=()=>{
 };
 document.querySelectorAll(".manual input").forEach(i=>i.addEventListener("keydown",e=>{ if(e.key==="Enter") document.getElementById("goManual").click(); }));
 
-// --- au lancement : si une météo est en cache, on l'affiche direct (utile hors-ligne) ---
+// --- bouton « tout télécharger » : pré-cache la météo de toutes les étapes (à faire tant qu'on a du réseau) ---
+const cacheBtn = document.getElementById("cacheBtn");
+const cacheMsg = document.getElementById("cacheMsg");
+cacheBtn.onclick = async ()=>{
+  cacheBtn.disabled = true;
+  let ok = 0;
+  for(let k=0;k<STAGES.length;k++){
+    const s = STAGES[k];
+    cacheMsg.textContent = `Téléchargement ${k+1}/${STAGES.length}…`;
+    try{
+      const res = await fetch(buildUrl(s.lat, s.lon));
+      if(res.ok){
+        const data = await res.json();
+        const payload = {data, lat:s.lat, lon:s.lon, name:`J${s.j} · ${s.n}`, meta:{ford:s.ford||null, alert:s.alert||null}, ts:Date.now()};
+        try{ localStorage.setItem("fc:stage"+s.j, JSON.stringify(payload)); }catch(_){}
+        ok++;
+      }
+    }catch(_){}
+  }
+  cacheMsg.textContent = `✓ ${ok}/${STAGES.length} étapes en cache`;
+  cacheBtn.disabled = false;
+};
+
+// --- au lancement : météo en cache affichée direct + pré-sélection de l'étape du jour ---
 (function(){
   let c=null; try{ c=JSON.parse(localStorage.getItem("lastForecast")||"null"); }catch(_){}
-  if(c && c.data){ render(c.data, c.lat, c.lon, c.name); }
+  if(c && c.data){ render(c.data, c.lat, c.lon, c.name, c.meta); }
+  // étape du jour : si la date d'aujourd'hui correspond à une étape, on la sélectionne et on charge
+  const t = new Date();
+  const today = `${t.getFullYear()}-${pad(t.getMonth()+1)}-${pad(t.getDate())}`;
+  const idx = STAGES.findIndex(s=>s.iso===today);
+  if(idx>=0){ stageSel.value=idx; stageSel.onchange(); }
 })();
 
 // --- PWA : service worker + bouton installer ---
