@@ -3,7 +3,7 @@
 // Les données météo (Open-Meteo) ne sont jamais mises en cache ici : elles ont besoin
 // de réseau, et le repli hors-ligne est géré côté app via la dernière météo enregistrée.
 
-const CACHE = "desert-a-mer-v2";
+const CACHE = "desert-a-mer-v3";
 const SHELL = [
   "./",
   "./index.html",

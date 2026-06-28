@@ -444,7 +444,7 @@ function render(d, lat, lon, name, meta){
   if(D.daylight_duration && D.daylight_duration[ti]!=null){
     const sec = D.daylight_duration[ti];
     const dh = Math.floor(sec/3600), dm = Math.round((sec%3600)/60);
-    daylight = `<div class="daylight">☀ <b>${hhmm(D.sunrise[ti])}</b> → <b>${hhmm(D.sunset[ti])}</b> · ~${dh}h${pad(dm)} de lumière <span class="sg">· lever/coucher indicatifs</span></div>`;
+    daylight = `<div class="daylight">☀ <b>${hhmm(D.sunrise[ti])}</b> → <b>${hhmm(D.sunset[ti])}</b> · ~${dh}h${pad(dm)} de lumière</div>`;
   }
 
   let html = banners + `<div class="hero" style="--verdict:${v0.col}">
