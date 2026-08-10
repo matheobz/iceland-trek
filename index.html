@@ -199,6 +199,23 @@
   .daylight b{color:var(--ice);font-weight:500}
   .daylight .sg{color:var(--mute-2)}
 
+  /* ---- mode nuit : palette chaude et sombre (préserve la vision nocturne sous la tente) ---- */
+  body.night{
+    --basalt:#0B0908; --basalt-2:#131009; --panel:#161210; --panel-2:#1D1712;
+    --line:#2C241B; --ice:#E3A55C; --moss:#9BA85F; --sand:#D89A4A; --lava:#D45B44;
+    --ink:#E8DAC2; --mute:#A08F74; --mute-2:#6F6250;
+    background:#0B0908;
+  }
+  .nightbtn{
+    font-family:"JetBrains Mono";font-size:12px;color:var(--mute);
+    background:var(--basalt-2);border:1px solid var(--line);
+    padding:6px 11px;border-radius:999px;cursor:pointer;transition:.15s;
+  }
+  .nightbtn:hover{color:var(--ink);border-color:var(--ice)}
+  body.night .nightbtn{color:#0B0908;background:var(--sand);border-color:var(--sand);font-weight:700}
+  .hr-rain{font-family:"JetBrains Mono";font-size:9.5px;color:var(--ice);margin-top:2px}
+  .m-at{font-family:"JetBrains Mono";font-size:9.5px;color:var(--mute-2);margin-top:3px}
+
   /* ---- bouton tout télécharger ---- */
   .dlbtn{background:var(--panel-2);border:1px solid var(--line);color:var(--ink);font-family:"Inter";font-weight:600;font-size:13px;padding:9px 14px;border-radius:9px;cursor:pointer;transition:border-color .15s}
   .dlbtn:hover{border-color:var(--ice)}
@@ -233,6 +250,7 @@
     <div class="brand">Mathéo<span class="dot"> </span>en<span class="dot"> </span>Islande</div>
     <div style="display:flex;align-items:center;gap:10px">
       <button id="installBtn" hidden style="font-family:'Inter';font-weight:600;font-size:12px;color:var(--basalt);background:var(--ice);border:none;padding:7px 12px;border-radius:8px;cursor:pointer">Installer</button>
+      <button id="nightBtn" class="nightbtn" title="Mode nuit : météo de la nuit, guet aurores, gués du matin">🌙 Nuit</button>
       <div class="tag">Veður · trek IS</div>
     </div>
   </div>
@@ -263,7 +281,8 @@
   <div id="out"><div class="state"><div class="big">Choisis un point de départ</div>Position GPS, une étape, ou des coordonnées manuelles.</div></div>
 
   <div class="legend">
-    Seuils rafales (marche) · <b>&lt; 15 m/s on avance</b> · <span class="s">15–20 prudence</span> · <span class="l">&gt; 20 difficile · &gt; 25 on attend</span>
+    Seuils rafales (marche) · <b>&lt; 15 m/s on avance</b> · <span class="s">15–20 prudence</span> · <span class="l">&gt; 20 difficile · &gt; 25 on attend</span><br>
+    La nuit (tente) · <b>&lt; 10 calme</b> · <span class="s">10–15 remuant</span> · <span class="l">&gt; 15 agité · &gt; 20 monte à l'abri</span>
   </div>
 
   <details class="safety">
@@ -280,33 +299,71 @@
 </div>
 
 <script>
-// 23 étapes du trek (12 août → 3 sept. 2026). Coordonnées géocodées depuis les lieux Notion (≈ à quelques km).
+// Étapes du trek (12 août → 3 sept. 2026), synchronisées avec la base Notion « Trip & Trek ».
 // Pour les jours de marche, le point = là où on marche/dort ; pour les jours de transition, la ville de base.
+// J18 → J21 : rien n'est fixé — deux options au choix chaque jour (mini-trek Höfn ou activités Reykjavík).
 const STAGES = [
-  {j:1, d:"12 août", iso:"2026-08-12", n:"Arrivée Keflavík → Reykjavík", lat:64.1466, lon:-21.9426},
-  {j:2, d:"13 août", iso:"2026-08-13", n:"Vol → Ísafjörður",            lat:66.0748, lon:-23.1339, alert:"Acheter le gaz à Smiðjan (interdit en avion) · vol arrive ~9h · enregistrer la trace sur safetravel.is"},
-  {j:3, d:"14 août", iso:"2026-08-14", n:"Hesteyri → Hlöðuvík",         lat:66.4150, lon:-22.6900, alert:"Ferry Ísafjörður → Hesteyri 09:00 — à reconfirmer la veille"},
-  {j:4, d:"15 août", iso:"2026-08-15", n:"Hlöðuvík → Hornvík",          lat:66.4300, lon:-22.4500},
-  {j:5, d:"16 août", iso:"2026-08-16", n:"Hornvík → ferry → Ísafjörður", lat:66.4300, lon:-22.4500, alert:"Ferry Hornvík → Ísafjörður 15:30 — à ne pas rater"},
-  {j:6, d:"17 août", iso:"2026-08-17", n:"Vol → Reykjavík (transition)", lat:64.1466, lon:-21.9426},
-  {j:7, d:"18 août", iso:"2026-08-18", n:"Landmannalaugar (bus + acclim.)", lat:63.9840, lon:-19.0610, alert:"Bus Reykjavík → Landmannalaugar ~07:00 · dernier ravito gaz/vivres du trek sud"},
-  {j:8, d:"19 août", iso:"2026-08-19", n:"Eldgjá / Hólaskjól",          lat:63.8810, lon:-18.6520, alert:"Grosse étape ~25 km, terrain non balisé — départ tôt, GPS chargé, eau pleine"},
-  {j:9, d:"20 août", iso:"2026-08-20", n:"Álftavötn",                   lat:63.7900, lon:-18.5300},
-  {j:10,d:"21 août", iso:"2026-08-21", n:"Strútur (Strútslaug)",        lat:63.7300, lon:-19.0500, ford:"Gué de la Hólmsá (peut monter à 50-80 cm) — vérifier le niveau avant de traverser"},
-  {j:11,d:"22 août", iso:"2026-08-22", n:"Mælifell (désert noir)",      lat:63.7800, lon:-19.1300, ford:"Gués multiples sur le Mælifellssandur — terrain meuble, allure lente"},
-  {j:12,d:"23 août", iso:"2026-08-23", n:"Hvanngil",                    lat:63.8300, lon:-19.2000},
-  {j:13,d:"24 août", iso:"2026-08-24", n:"Emstrur (Botnar)",            lat:63.7660, lon:-19.3730, ford:"Gué de la Bratthálskvísl en début d'étape"},
-  {j:14,d:"25 août", iso:"2026-08-25", n:"Þórsmörk (Langidalur)",       lat:63.6840, lon:-19.5090, ford:"Gué de la Þröngá avant Langidalur"},
-  {j:15,d:"26 août", iso:"2026-08-26", n:"Repos Þórsmörk",              lat:63.6840, lon:-19.5090, ford:"Accès Stakkholtsgjá = gués profonds — seulement si rivières basses, sinon Tindfjöll"},
-  {j:16,d:"27 août", iso:"2026-08-27", n:"Fimmvörðuháls → Skógar",      lat:63.6328, lon:-19.4453, alert:"Col le plus exposé du trek (~25 km, +1000-1400 m) — départ très tôt, météo critique en altitude"},
-  {j:17,d:"28 août", iso:"2026-08-28", n:"Vík (sable noir)",            lat:63.4186, lon:-19.0060, alert:"Bus Strætó 52 Skógar → Vík (~1/jour, appli Klappið) · Reynisfjara : vagues sournoises, rester loin de l'eau"},
-  {j:18,d:"29 août", iso:"2026-08-29", n:"Vík → Reykjavík",             lat:64.1466, lon:-21.9426, alert:"Bus Strætó 52 Vík → Reykjavík ~2h30-3h (Klappið)"},
-  {j:19,d:"30 août", iso:"2026-08-30", n:"Snæfellsnes (excursion)",     lat:64.9270, lon:-23.3100, alert:"Réserver la veille une fois la météo claire (sans prépaiement)"},
-  {j:20,d:"31 août", iso:"2026-08-31", n:"Cercle d'Or (excursion)",     lat:64.3104, lon:-20.3024, alert:"Réserver la veille (sans prépaiement)"},
-  {j:21,d:"1ᵉʳ sept.", iso:"2026-09-01", n:"Chill Reykjavík",           lat:64.1466, lon:-21.9426},
-  {j:22,d:"2 sept.", iso:"2026-09-02", n:"Reykjavík + Blue Lagoon → vol", lat:64.1466, lon:-21.9426, alert:"Vol Keflavík → Orly 01:10 · finir/jeter le gaz avant l'aéroport · statut Blue Lagoon sur safetravel.is"},
-  {j:23,d:"3 sept.", iso:"2026-09-03", n:"Retour Paris → Nantes",       lat:47.2184, lon:-1.5536, alert:"Atterrissage Orly 06:50, puis Paris → Nantes"},
+  {id:"j1", j:1, d:"12 août", iso:"2026-08-12", n:"Orly → Keflavík · nuit à l'aéroport", lat:63.9850, lon:-22.6056, alert:"Atterrissage 23:30 · nuit à l'aéroport · Flybus 05:00 → BSÍ 05:45 · éclipse totale 17h48 (si vol avançable)"},
+  {id:"j2", j:2, d:"13 août", iso:"2026-08-13", n:"Vol → Ísafjörður",            lat:66.0748, lon:-23.1339, alert:"Acheter le gaz à Smiðjan (interdit en avion) · enregistrer la trace sur safetravel.is · nuit camping Tungudalur"},
+  {id:"j3", j:3, d:"14 août", iso:"2026-08-14", n:"Ferry → Hesteyri → Hlöðuvík (~14 km)", lat:66.4150, lon:-22.6900, alert:"Ferry Ísafjörður → Hesteyri 09:00 — à reconfirmer la veille · ~6 h de marche, +550/-550 m"},
+  {id:"j4", j:4, d:"15 août", iso:"2026-08-15", n:"Hlöðuvík → Hornvík (~10 km)",  lat:66.4300, lon:-22.4500},
+  {id:"j5", j:5, d:"16 août", iso:"2026-08-16", n:"Hornvík (Hornbjarg) → ferry → Ísafjörður", lat:66.4300, lon:-22.4500, alert:"Ferry Hornvík → Ísafjörður 15:30 — à ne pas rater"},
+  {id:"j6", j:6, d:"17 août", iso:"2026-08-17", n:"Vol → Reykjavík (transition)", lat:64.1430, lon:-21.8740},
+  {id:"j7", j:7, d:"18 août", iso:"2026-08-18", n:"Landmannalaugar (bus + acclim.)", lat:63.9840, lon:-19.0610, alert:"Bus Reykjavík → Landmannalaugar (4-5 h) · dernier ravito gaz/vivres du trek sud · rando acclim. ~6 km"},
+  {id:"j8", j:8, d:"19 août", iso:"2026-08-19", n:"Landmannalaugar → Eldgjá / Hólaskjól", lat:63.8810, lon:-18.6520, alert:"⚠️ Étape la plus dure du trek : 37-39 km, 9-11 h — départ 5h30, arrivée 16h-17h · GPS chargé, eau pleine"},
+  {id:"j9", j:9, d:"20 août", iso:"2026-08-20", n:"Hólaskjól → Álftavötn (6-7 km)", lat:63.7900, lon:-18.5300, alert:"Étape courte (2-3 h) · option spontanée Ófærufoss A/R 14 km si la forme et la météo suivent"},
+  {id:"j10",j:10,d:"21 août", iso:"2026-08-21", n:"Álftavötn → Rauðibotn → Strútur (20 km)", lat:63.7300, lon:-19.0500, alert:"Sentier Strútsstígur via Strútslaug, PAS la route (28,7 km) · 7-9 h", ford:"Gué de la Hólmsá (peut monter à 50-80 cm) — vérifier le niveau avant de traverser"},
+  {id:"j11",j:11,d:"22 août", iso:"2026-08-22", n:"Strútur → Mælifell → Hvanngil (20 km)", lat:63.8300, lon:-19.2000, alert:"F210 via Mælifell (pas la variante 31 km) · départ 7h30-8h, arrivée 13h-15h", ford:"Gués multiples sur le Mælifellssandur — terrain meuble, allure lente"},
+  {id:"j12",j:12,d:"23 août", iso:"2026-08-23", n:"Hvanngil → Emstrur (Botnar) (12 km)", lat:63.7660, lon:-19.3730, ford:"Gué de la Bratthálskvísl en début d'étape"},
+  {id:"j13",j:13,d:"24 août", iso:"2026-08-24", n:"Emstrur → Þórsmörk (Langidalur) (15-16 km)", lat:63.6840, lon:-19.5090, ford:"Gué de la Þröngá avant Langidalur (passerelle sur la Syðri-Emstruá avant)"},
+  {id:"j14",j:14,d:"25 août", iso:"2026-08-25", n:"Fimmvörðuháls → Skógar · FIN DU TREK", lat:63.6328, lon:-19.4453, alert:"Col le plus exposé (~25 km, +1000-1400 m) — départ très tôt · si le col ferme : nuit sup. à Þórsmörk, paiement sur place"},
+  {id:"j15",j:15,d:"26 août", iso:"2026-08-26", n:"Journée flottante à Skógar",   lat:63.5290, lon:-19.5110, alert:"Skógar libre OU Fimmvörðuháls décalé si repos pris la veille · camping Skógafoss sans résa"},
+  {id:"j16",j:16,d:"27 août", iso:"2026-08-27", n:"Skógar → Vík (bus)",           lat:63.4186, lon:-19.0060, alert:"Bus 52 (suivi Klappið, paiement à bord) · Reynisfjara : vagues sournoises, rester loin de l'eau"},
+  {id:"j17",j:17,d:"28 août", iso:"2026-08-28", n:"Vík, journée pleine",          lat:63.4186, lon:-19.0060, alert:"2e nuit au camping de Vík, paiement sur place · si cap sur Höfn : bus 52 à 17:30"},
+  {id:"j18h",j:18,d:"29 août", iso:"2026-08-29", n:"Option Höfn — samedi sans bus", lat:64.2539, lon:-15.2082, alert:"Aucun bus 52 le samedi — journée à pied/vélo : Stokksnes-Vestrahorn, Ósland, Almannaskarð"},
+  {id:"j18r",j:18,d:"29 août", iso:"2026-08-29", n:"Option Reykjavík — activités libres", lat:64.1430, lon:-21.8740, alert:"Décidable le matin même : Esja, Reykjadalur (rivière chaude), Grótta"},
+  {id:"j19h",j:19,d:"30 août", iso:"2026-08-30", n:"Option Höfn — bus dispo (dim.)", lat:64.2539, lon:-15.2082, alert:"Bus 52 le dimanche : Jökulsárlón 13:10 → retour 20:22 (6h10 sur place) ou Skaftafell"},
+  {id:"j19r",j:19,d:"30 août", iso:"2026-08-30", n:"Option Reykjavík — excursion ?", lat:64.1430, lon:-21.8740, alert:"Excursions à réserver la veille : Cercle d'Or, Snæfellsnes… (place quasi garantie à J-1, sans prépaiement)"},
+  {id:"j20h",j:20,d:"31 août", iso:"2026-08-31", n:"Option Höfn — lundi sans bus", lat:64.2539, lon:-15.2082, alert:"Pas de bus le lundi — Hoffell (bains chauds), Heinabergslón, ou piscine + langoustine"},
+  {id:"j20r",j:20,d:"31 août", iso:"2026-08-31", n:"Option Reykjavík — excursion ?", lat:64.1430, lon:-21.8740, alert:"Excursions à réserver la veille (sans prépaiement)"},
+  {id:"j21h",j:21,d:"1ᵉʳ sept.", iso:"2026-09-01", n:"Option Höfn — RETOUR Reykjavík", lat:64.2539, lon:-15.2082, alert:"⚠️ DERNIER bus Höfn → Reykjavík avant le vol : 13:10 mardi — le suivant part après le décollage"},
+  {id:"j21r",j:21,d:"1ᵉʳ sept.", iso:"2026-09-01", n:"Option Reykjavík — chill",   lat:64.1430, lon:-21.8740},
+  {id:"j22",j:22,d:"2 sept.", iso:"2026-09-02", n:"Reykjavík · lagon + vol retour", lat:64.1466, lon:-21.9426, alert:"Vol Keflavík → Orly 01:10 · finir/jeter le gaz avant l'aéroport · lagon avant de partir (déjà prévu, ne pas doubler avec Sky Lagoon avant)"},
+  {id:"j23",j:23,d:"3 sept.", iso:"2026-09-03", n:"Retour Paris → Nantes",        lat:47.2184, lon:-1.5536, alert:"Atterrissage Orly 06:50, puis Paris → Nantes"},
 ];
+
+// Fenêtres de ciel noir par nuit (page Notion « Lumière & nuit », heure islandaise UTC).
+// Clé = date du soir. a→b = soleil sous -12°, seul créneau étoiles/aurores. m = durée en minutes (jauge sur 5h30 max).
+const NIGHTS = {
+  "2026-08-12":{set:"21:53"}, "2026-08-13":{set:"22:09"}, "2026-08-14":{set:"22:06"},
+  "2026-08-15":{set:"22:01"}, "2026-08-16":{set:"21:57"},
+  "2026-08-17":{set:"21:35",a:"00:38",b:"02:26",dur:"1h50",m:110},
+  "2026-08-18":{set:"21:20",a:"00:12",b:"02:30",dur:"2h20",m:140},
+  "2026-08-19":{set:"21:13",a:"23:56",b:"02:40",dur:"2h46",m:166},
+  "2026-08-20":{set:"21:10",a:"23:46",b:"02:50",dur:"3h06",m:186},
+  "2026-08-21":{set:"21:07",a:"23:40",b:"02:58",dur:"3h20",m:200},
+  "2026-08-22":{set:"21:04",a:"23:34",b:"03:04",dur:"3h32",m:212},
+  "2026-08-23":{set:"21:02",a:"23:28",b:"03:12",dur:"3h46",m:226},
+  "2026-08-24":{set:"20:59",a:"23:22",b:"03:18",dur:"3h58",m:238},
+  "2026-08-25":{set:"20:56",a:"23:14",b:"03:26",dur:"4h14",m:254},
+  "2026-08-26":{set:"20:52",a:"23:08",b:"03:32",dur:"4h26",m:266},
+  "2026-08-27":{set:"20:48",a:"23:02",b:"03:38",dur:"4h38",m:278},
+  "2026-08-28":{set:"20:42",a:"22:52",b:"03:42",dur:"4h52",m:292},
+  "2026-08-29":{set:"20:53",a:"23:08",b:"03:50",dur:"4h44",m:284},
+  "2026-08-30":{set:"20:49",a:"23:02",b:"03:56",dur:"4h56",m:296},
+  "2026-08-31":{set:"20:46",a:"22:56",b:"04:00",dur:"5h06",m:306},
+  "2026-09-01":{set:"20:42",a:"22:50",b:"04:06",dur:"5h18",m:318},
+  "2026-09-02":{set:"20:39",a:"22:46",b:"04:10",dur:"5h26",m:326},
+};
+
+// Lune pendant le voyage (page « Lumière & nuit »).
+function moonNote(iso){
+  if(iso<="2026-08-18") return "🌑 nouvelle lune / fin de croissant — ciel bien noir";
+  if(iso<="2026-08-24") return "🌓 premier quartier, couché tôt — ⭐ ta meilleure fenêtre aurores";
+  if(iso<="2026-08-26") return "🌔 lune gibbeuse croissante — gêne modérée";
+  if(iso<="2026-08-28") return "🌕 pleine lune — ciel lavé, seules les aurores fortes ressortent";
+  return "🌖 lune gibbeuse, haute toute la nuit — ciel éclairé";
+}
 
 const WMO = {
   0:["Ciel clair","☀️"],1:["Plutôt clair","🌤️"],2:["Éclaircies","⛅"],3:["Couvert","☁️"],
@@ -351,12 +408,113 @@ function fmtDay(iso, i){
 
 const out = document.getElementById("out");
 const placeEl = document.getElementById("place");
+let lastArgs = null;   // derniers arguments de render(), pour re-rendre quand on bascule jour/nuit
+
+// verdict de nuit sous la tente selon la rafale max de la nuit (m/s)
+function nightVerdict(g){
+  if(g < 10) return {icon:"go",  label:"Nuit calme",       note:"La toile ne bougera presque pas.", col:"var(--moss)", line:"rgba(79,181,158,.4)"};
+  if(g < 15) return {icon:"mid", label:"Nuit remuante",    note:"Rafales sensibles — tends bien la toile, mets du lourd dans les absides.", col:"var(--sand)", line:"rgba(232,162,74,.4)"};
+  if(g < 20) return {icon:"hard",label:"Nuit agitée",      note:"Vérifie sardines et haubans avant de te coucher, range tout ce qui traîne.", col:"var(--lava)", line:"rgba(226,96,74,.45)"};
+  return {icon:"stop",label:"Nuit mouvementée", note:"Monte la tente à l'abri du vent, double les ancrages — sommeil compromis.", col:"var(--lava)", line:"rgba(226,96,74,.6)"};
+}
+
+// Panneau « cette nuit » : météo 21h → 08h, fenêtre de ciel noir, guet aurores, gués du lendemain matin.
+function buildNight(d, ti){
+  const D = d.daily, H = d.hourly;
+  const now = new Date();
+  // le matin (avant midi), « cette nuit » = celle commencée la veille au soir
+  const nsi = now.getHours() < 12 ? ti - 1 : ti;
+  if(nsi < 0 || nsi + 1 >= D.time.length) return "";
+  const d0 = D.time[nsi], d1 = D.time[nsi+1];
+  const idx = [];
+  for(let i=0;i<H.time.length;i++) if(H.time[i] >= d0+"T21:00" && H.time[i] <= d1+"T08:00") idx.push(i);
+  if(!idx.length) return "";
+
+  const gusts = idx.map(i=>H.wind_gusts_10m[i]);
+  const gmax = Math.max(...gusts);
+  const gAt = H.time[idx[gusts.indexOf(gmax)]].slice(11,16);
+  const tmin = Math.min(...idx.map(i=>H.temperature_2m[i]));
+  const hasRain = Array.isArray(H.precipitation);     // absent sur une météo cachée avec l'ancienne version
+  const hasCloud = Array.isArray(H.cloud_cover);
+  const rain = hasRain ? idx.reduce((a,i)=>a+(H.precipitation[i]||0),0) : null;
+
+  // strip horaire de la nuit
+  let strip = "";
+  for(const i of idx){
+    const t = new Date(H.time[i]);
+    const [,g] = wmo(H.weather_code[i]);
+    const gu = H.wind_gusts_10m[i];
+    const c = gu>=20?"bad":gu>=15?"warn":"";
+    strip += `<div class="hr"><div class="hr-t">${pad(t.getHours())}h</div>`
+      + `<div class="hr-g">${g}</div>`
+      + `<div class="hr-temp">${r(H.temperature_2m[i])}°</div>`
+      + `<div class="hr-wind ${c}">${r(gu)}<span style="color:var(--mute-2)">m/s</span></div>`
+      + (hasRain ? `<div class="hr-rain">${(H.precipitation[i]||0)>=0.1 ? r(H.precipitation[i],1)+"mm" : "·"}</div>` : "")
+      + `</div>`;
+  }
+
+  // fenêtre de ciel noir + estimation du guet aurores
+  const N = NIGHTS[d0];
+  let cm = null;        // % nuages moyen pendant la fenêtre
+  let winHtml = "", auroraHtml = "";
+  if(N && N.a){
+    const wa = (parseInt(N.a,10) >= 12 ? d0 : d1) + "T" + N.a;   // fenêtre qui démarre avant ou après minuit
+    const wb = d1 + "T" + N.b;
+    if(hasCloud){
+      const cl = [];
+      for(let i=0;i<H.time.length;i++) if(H.time[i] >= wa && H.time[i] <= wb && H.cloud_cover[i]!=null) cl.push(H.cloud_cover[i]);
+      if(cl.length) cm = Math.round(cl.reduce((a,b)=>a+b,0)/cl.length);
+    }
+    const blocks = Math.max(1, Math.round((N.m/330)*12));
+    winHtml = `<div class="daylight">🌌 Ciel noir <b>${N.a}</b> → <b>${N.b}</b> · ${N.dur} <span class="sg">${"█".repeat(blocks)}${"░".repeat(12-blocks)}</span></div>`;
+    let bc, txt;
+    if(cm==null){ bc="info"; txt=`<b>Guet aurores : à l'œil.</b> Couverture nuageuse inconnue (météo non rafraîchie) — des étoiles en te couchant → arme le protocole, sinon dors.`; }
+    else if(cm<=35){ bc="go";  txt=`<b>Guet aurores : ON</b> — ~${cm}% de nuages pendant la fenêtre. Porte de tente au nord, alarmes <b>23h30</b> et <b>01h00</b>, 60 s dehors regard au nord.`; }
+    else if(cm<=70){ bc="warn";txt=`<b>Guet aurores : tentable</b> — ~${cm}% de nuages, ça peut s'ouvrir. Des étoiles en te couchant → arme les alarmes, sinon dors.`; }
+    else { bc="bad"; txt=`<b>Guet aurores : off</b> — ciel bouché (~${cm}% de nuages) pendant la fenêtre. Dors, le sommeil est un consommable critique.`; }
+    auroraHtml = `<div class="banner ${bc}"><span class="bi">🌠</span><div>${txt}<br><span class="sub">${moonNote(d0)}</span></div></div>`;
+  } else {
+    winHtml = `<div class="daylight">🌌 Pas de vraie nuit — crépuscule permanent${N ? ` · coucher <b>${N.set}</b>` : ""}</div>`;
+    auroraHtml = `<div class="banner info"><span class="bi">😴</span><div><b>Pas de guet possible</b> — le ciel ne devient pas noir avant le J6 (17 août). Masque de sommeil et dodo.</div></div>`;
+  }
+
+  // gués du lendemain matin : estimation à partir de la pluie de la journée + de la nuit
+  let fordHtml = "";
+  for(const s of STAGES.filter(s=>s.iso===d1 && s.ford)){
+    const tot = (D.precipitation_sum[nsi]||0) + (rain||0);
+    let fc="go", fm="Niveau bas probable au petit matin.";
+    if(tot>=10){ fc="bad"; fm="Niveau haut probable — traverse au plus tôt (minimum du matin) ou attends la décrue."; }
+    else if(tot>=3){ fc="warn"; fm="Niveau en hausse possible — sonde avant d'engager, détache la ceinture du sac."; }
+    fordHtml += `<div class="banner ${fc}"><span class="bi">🌊</span><div><b>Gué demain (J${s.j}) :</b> ${s.ford}<br>`
+      + `<span class="sub">${fm} ≈${r(tot,1)} mm de pluie (journée + nuit). Rivière glaciaire : niveau minimal tôt le matin, maximal en fin d'après-midi.</span></div></div>`;
+  }
+
+  const v = nightVerdict(gmax);
+  const gc = gmax>=20?"bad":gmax>=15?"warn":"";
+  const fD = (iso,o)=>new Date(iso+"T12:00:00").toLocaleDateString("fr-FR",o);
+  const cmAll = hasCloud ? Math.round(idx.reduce((a,i)=>a+(H.cloud_cover[i]||0),0)/idx.length) : null;
+  return `<div class="hero" style="--verdict:${v.col}">
+    <div class="h-eyebrow">🌙 Cette nuit · ${fD(d0,{weekday:"short",day:"numeric"})} → ${fD(d1,{weekday:"short",day:"numeric",month:"short"})}</div>
+    <div class="verdict" style="--vline:${v.line}">
+      <div class="v-icon" style="--verdict:${v.col}"><svg viewBox="0 0 24 24">${V_ICON[v.icon]}</svg></div>
+      <div class="v-txt"><div class="v-label">${v.label}</div><div class="v-note">${v.note}</div></div>
+    </div>
+    <div class="metrics">
+      <div class="metric"><div class="m-k">Rafale max nuit</div><div class="m-v ${gc}">${r(gmax)}<span class="m-u"> m/s</span></div><div class="m-at">vers ${gAt}</div></div>
+      <div class="metric"><div class="m-k">Pluie nuit</div><div class="m-v">${rain==null?"—":r(rain,1)}<span class="m-u"> mm</span></div></div>
+      <div class="metric"><div class="m-k">T° mini</div><div class="m-v">${r(tmin)}<span class="m-u"> °C</span></div></div>
+      <div class="metric"><div class="m-k">Nuages${cm!=null?" (fenêtre)":""}</div><div class="m-v">${cm!=null?cm:(cmAll!=null?cmAll:"—")}<span class="m-u"> %</span></div></div>
+    </div>
+    ${winHtml}
+    <div class="hourly">${strip}</div>
+  </div>` + auroraHtml + fordHtml;
+}
 
 // past_days=1 → on récupère aussi la veille (pour le risque de gué) ; sunrise/sunset/daylight pour la lumière.
 function buildUrl(lat, lon){
   return `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}`
     + `&daily=weather_code,temperature_2m_max,temperature_2m_min,precipitation_sum,wind_speed_10m_max,wind_gusts_10m_max,wind_direction_10m_dominant,sunrise,sunset,daylight_duration`
-    + `&hourly=temperature_2m,weather_code,wind_gusts_10m`
+    + `&hourly=temperature_2m,weather_code,wind_gusts_10m,precipitation,cloud_cover`
     + `&wind_speed_unit=ms&timezone=auto&past_days=1&forecast_days=3`;
 }
 
@@ -392,6 +550,7 @@ async function load(lat, lon, name, stageKey, meta){
 }
 
 function render(d, lat, lon, name, meta){
+  lastArgs = [d, lat, lon, name, meta];
   const D = d.daily, H = d.hourly;
   placeEl.hidden = false;
   placeEl.innerHTML = name
@@ -447,7 +606,8 @@ function render(d, lat, lon, name, meta){
     daylight = `<div class="daylight">☀ <b>${hhmm(D.sunrise[ti])}</b> → <b>${hhmm(D.sunset[ti])}</b> · ~${dh}h${pad(dm)} de lumière</div>`;
   }
 
-  let html = banners + `<div class="hero" style="--verdict:${v0.col}">
+  const nightHtml = document.body.classList.contains("night") ? buildNight(d, ti) : "";
+  let html = banners + nightHtml + `<div class="hero" style="--verdict:${v0.col}">
     <div class="h-eyebrow">${fmtDay(D.time[ti],0)}</div>
     <div class="h-cond">
       <div class="h-glyph">${gl0}</div>
@@ -510,7 +670,7 @@ stageSel.onchange = ()=>{
   const s = STAGES[i];
   stageHint.hidden=false;
   stageHint.innerHTML = `Étape <b>J${s.j}</b> · ${s.d} · ${s.n}`;
-  load(s.lat, s.lon, `J${s.j} · ${s.n}`, "stage"+s.j, {ford:s.ford||null, alert:s.alert||null});
+  load(s.lat, s.lon, `J${s.j} · ${s.n}`, s.id, {ford:s.ford||null, alert:s.alert||null});
 };
 function resetStage(){ stageSel.value=""; stageHint.hidden=true; }
 
@@ -547,7 +707,7 @@ cacheBtn.onclick = async ()=>{
       if(res.ok){
         const data = await res.json();
         const payload = {data, lat:s.lat, lon:s.lon, name:`J${s.j} · ${s.n}`, meta:{ford:s.ford||null, alert:s.alert||null}, ts:Date.now()};
-        try{ localStorage.setItem("fc:stage"+s.j, JSON.stringify(payload)); }catch(_){}
+        try{ localStorage.setItem("fc:"+s.id, JSON.stringify(payload)); }catch(_){}
         ok++;
       }
     }catch(_){}
@@ -556,15 +716,44 @@ cacheBtn.onclick = async ()=>{
   cacheBtn.disabled = false;
 };
 
-// --- au lancement : météo en cache affichée direct + pré-sélection de l'étape du jour ---
+// --- mode nuit : bascule manuelle (mémorisée 12 h) sinon automatique entre 21h et 7h ---
+const nightBtn = document.getElementById("nightBtn");
+function nightPref(){
+  try{
+    const p = JSON.parse(localStorage.getItem("nightPref")||"null");
+    if(p && Date.now()-p.t < 12*3600e3) return p.v;   // le choix manuel expire après 12 h → retour à l'auto
+  }catch(_){}
+  return null;
+}
+function isNight(){
+  const p = nightPref(); if(p) return p==="on";
+  const h = new Date().getHours(); return h>=21 || h<7;
+}
+function applyNight(){
+  const on = isNight();
+  document.body.classList.toggle("night", on);
+  nightBtn.textContent = on ? "☀️ Jour" : "🌙 Nuit";
+  if(lastArgs) render(...lastArgs);
+}
+nightBtn.onclick = ()=>{
+  try{ localStorage.setItem("nightPref", JSON.stringify({v: isNight()?"off":"on", t: Date.now()})); }catch(_){}
+  applyNight();
+};
+
+// --- au lancement : mode nuit, météo en cache affichée direct + pré-sélection de l'étape du jour ---
 (function(){
+  applyNight();
   let c=null; try{ c=JSON.parse(localStorage.getItem("lastForecast")||"null"); }catch(_){}
   if(c && c.data){ render(c.data, c.lat, c.lon, c.name, c.meta); }
-  // étape du jour : si la date d'aujourd'hui correspond à une étape, on la sélectionne et on charge
+  // étape du jour : si la date correspond à une seule étape on la charge ; deux options → à toi de choisir
   const t = new Date();
   const today = `${t.getFullYear()}-${pad(t.getMonth()+1)}-${pad(t.getDate())}`;
-  const idx = STAGES.findIndex(s=>s.iso===today);
-  if(idx>=0){ stageSel.value=idx; stageSel.onchange(); }
+  const idxs = STAGES.map((s,i)=>i).filter(i=>STAGES[i].iso===today);
+  if(idxs.length===1){ stageSel.value=idxs[0]; stageSel.onchange(); }
+  else if(idxs.length>1){
+    stageHint.hidden = false;
+    stageHint.innerHTML = `Aujourd'hui, 2 options : <b>${STAGES[idxs[0]].n}</b> ou <b>${STAGES[idxs[1]].n}</b> — choisis dans la liste (ou GPS).`;
+  }
 })();
 
 // --- PWA : service worker + bouton installer ---

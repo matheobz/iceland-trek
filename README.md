@@ -4,6 +4,11 @@ Petite app météo autonome pour le trek Islande. Position GPS + aujourd'hui et 
 suivants, avec verdict de marche basé sur les rafales. Données Open-Meteo (sans clé API).
 Installable sur l'écran d'accueil, et s'ouvre **hors-ligne** en gardant la dernière météo connue.
 
+**Mode nuit** (bouton 🌙, automatique de 21h à 7h) : palette chaude qui préserve la vision
+nocturne, météo de la nuit (21h → 8h, rafales/pluie/T° mini), fenêtre de ciel noir et
+estimation du guet aurores (nuages pendant la fenêtre + lune), et estimation du niveau des
+gués du lendemain matin pour les nuits concernées.
+
 ## Déployer sur Vercel 
 
 ### Option A — en ligne de commande (le plus rapide)
