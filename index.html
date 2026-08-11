@@ -175,6 +175,7 @@
   .d-gust.warn{color:var(--sand)} .d-gust.bad{color:var(--lava)}
   .d-glabel{font-family:"JetBrains Mono";font-size:9.5px;letter-spacing:.06em;text-transform:uppercase;color:var(--mute-2);margin-top:2px}
   .d-precip{font-family:"JetBrains Mono";font-size:11px;color:var(--mute);margin-top:3px}
+  .d-tide{font-family:"JetBrains Mono";font-size:10.5px;color:var(--ice);margin-top:3px;letter-spacing:.01em}
 
   .legend{margin-top:20px;font-family:"JetBrains Mono";font-size:11px;color:var(--mute-2);line-height:1.7;letter-spacing:.02em}
   .legend b{color:var(--moss);font-weight:500}
@@ -295,7 +296,7 @@
       <div class="row">Gués : par fort débit, ne traverse jamais seul au-dessus du genou — détache la ceinture du sac, vise large et lent.</div>
     </div>
   </details>
-  <div class="foot">Données <a href="https://open-meteo.com" target="_blank" rel="noopener">Open-Meteo</a> (ICON/ECMWF) · vent en m/s · pour les alertes officielles → <a href="https://en.vedur.is/weather/warnings" target="_blank" rel="noopener">vedur.is</a></div>
+  <div class="foot">Données <a href="https://open-meteo.com" target="_blank" rel="noopener">Open-Meteo</a> (ICON/ECMWF) · vent en m/s · marées Hornstrandir : réf. Ísafjörður (<a href="https://www.tide-forecast.com/locations/Isafjorour-Iceland/tides/latest" target="_blank" rel="noopener">tide-forecast</a>) · alertes officielles → <a href="https://en.vedur.is/weather/warnings" target="_blank" rel="noopener">vedur.is</a></div>
 </div>
 
 <script>
@@ -354,6 +355,22 @@ const NIGHTS = {
   "2026-08-31":{set:"20:46",a:"22:56",b:"04:00",dur:"5h06",m:306},
   "2026-09-01":{set:"20:42",a:"22:50",b:"04:06",dur:"5h18",m:318},
   "2026-09-02":{set:"20:39",a:"22:46",b:"04:10",dur:"5h26",m:326},
+};
+
+// Marées — port de référence Ísafjörður (valable pour tout Hornstrandir, heure locale islandaise).
+// En dur exprès : aucun réseau là-haut, et les marées sont astronomiques donc connues d'avance.
+// Basses relevées sur tide-forecast.com ; hautes préfixées ≈ = interpolées (±10 min).
+// Vives-eaux 13–15/08 : basses quasi nulles (gués faciles) MAIS pleines mers maximales (plages réduites).
+// Règle : traverser gués/estuaires dans une fenêtre de ±2 h autour de la marée basse.
+const TIDES = {
+  "2026-08-13":{low:["02:47","14:52"], high:["≈08:49","≈21:05"],
+    tip:"Vives-eaux : gués très bas à marée basse, mais pleines mers max. Screenshot de ces horaires + confirme les gués avec les rangers avant le ferry."},
+  "2026-08-14":{low:["03:26","15:33"], high:["≈09:29","≈21:45"],
+    tip:"Arrive sur la plage de Hlöðuvík avant ~18h : sable dur autour de la basse de 15:33, galets et rochers ensuite."},
+  "2026-08-15":{low:["04:04","16:14"], high:["≈10:09","≈22:26"],
+    tip:"Pars tôt de Hlöðuvík : la mer monte jusqu'à ~10h. Hornbjarg ce soir ? Traverse le Hafnarós entre 14h et 18h30 (basse 16:14), aller-retour dans la même fenêtre."},
+  "2026-08-16":{low:["04:40","16:55"], high:["10:39","≈23:05"],
+    tip:"Hornbjarg ce matin = retour de traversée près de la pleine mer (10:39). Falaises idéalement faites hier soir ; sinon traverse le Hafnarós avant ~7h (basse 04:40). Ferry 15:30."},
 };
 
 // Lune pendant le voyage (page « Lumière & nuit »).
@@ -478,8 +495,13 @@ function buildNight(d, ti){
     auroraHtml = `<div class="banner info"><span class="bi">😴</span><div><b>Pas de guet possible</b> — le ciel ne devient pas noir avant le J6 (17 août). Masque de sommeil et dodo.</div></div>`;
   }
 
-  // gués du lendemain matin : estimation à partir de la pluie de la journée + de la nuit
+  // marées du lendemain (Hornstrandir) : le timing de départ se décide la veille au soir
   let fordHtml = "";
+  const tTom = TIDES[d1];
+  if(tTom){
+    fordHtml += `<div class="banner info"><span class="bi">🌊</span><div><b>Marées demain</b> (réf. Ísafjörður) · basse <b>${tTom.low.join("</b> · <b>")}</b> · haute ${tTom.high.join(" · ")}<br><span class="sub">${tTom.tip}</span></div></div>`;
+  }
+  // gués du lendemain matin : estimation à partir de la pluie de la journée + de la nuit
   for(const s of STAGES.filter(s=>s.iso===d1 && s.ford)){
     const tot = (D.precipitation_sum[nsi]||0) + (rain||0);
     let fc="go", fm="Niveau bas probable au petit matin.";
@@ -568,6 +590,10 @@ function render(d, lat, lon, name, meta){
   if(meta && meta.alert){
     banners += `<div class="banner warn"><span class="bi">⏰</span><div>${meta.alert}</div></div>`;
   }
+  const tide = TIDES[D.time[ti]];
+  if(tide){
+    banners += `<div class="banner info"><span class="bi">🌊</span><div><b>Marées</b> (réf. Ísafjörður) · basse <b>${tide.low.join("</b> · <b>")}</b> · haute ${tide.high.join(" · ")}<br><span class="sub">${tide.tip}</span></div></div>`;
+  }
   if(meta && meta.ford){
     const rainY = D.precipitation_sum[ti-1]==null ? 0 : D.precipitation_sum[ti-1];
     const rainT = D.precipitation_sum[ti]==null ? 0 : D.precipitation_sum[ti];
@@ -635,6 +661,7 @@ function render(d, lat, lon, name, meta){
   for(let i=ti+1;i<D.time.length;i++){
     const v = verdict(D.wind_gusts_10m_max[i]);
     const [desc,gl] = wmo(D.weather_code[i]);
+    const td = TIDES[D.time[i]];
     html += `<div class="day" style="--verdict:${v.col}">
       <div class="d-left">
         <div class="d-date">${fmtDay(D.time[i],i-ti)}</div>
@@ -643,7 +670,8 @@ function render(d, lat, lon, name, meta){
       <div class="d-mid">
         <div class="d-glyph">${gl}</div>
         <div><div class="d-temp">${r(D.temperature_2m_max[i])}°<span class="lo"> / ${r(D.temperature_2m_min[i])}°</span></div>
-        <div class="d-precip">${desc} · ${r(D.precipitation_sum[i],1)} mm</div></div>
+        <div class="d-precip">${desc} · ${r(D.precipitation_sum[i],1)} mm</div>
+        ${td ? `<div class="d-tide">🌊 basse ${td.low.join(" · ")} — haute ${td.high.join(" · ")}</div>` : ""}</div>
       </div>
       <div class="d-right">
         <div class="d-gust ${cls(D.wind_gusts_10m_max[i])}">${r(D.wind_gusts_10m_max[i])}<span style="font-size:11px;color:var(--mute);font-weight:400"> m/s</span></div>
