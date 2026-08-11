@@ -373,6 +373,10 @@ const TIDES = {
     tip:"Hornbjarg ce matin = retour de traversée près de la pleine mer (10:39). Falaises idéalement faites hier soir ; sinon traverse le Hafnarós avant ~7h (basse 04:40). Ferry 15:30."},
 };
 
+// Les marées ne s'affichent que si le point regardé est dans la zone Ísafjörður / Hornstrandir
+// (le port de référence n'a aucun sens à Keflavík, Reykjavík ou depuis la maison).
+const tidesHere = (lat,lon) => lat>65.4 && lat<66.9 && lon>-24.8 && lon<-21.3;
+
 // Lune pendant le voyage (page « Lumière & nuit »).
 function moonNote(iso){
   if(iso<="2026-08-18") return "🌑 nouvelle lune / fin de croissant — ciel bien noir";
@@ -436,7 +440,7 @@ function nightVerdict(g){
 }
 
 // Panneau « cette nuit » : météo 21h → 08h, fenêtre de ciel noir, guet aurores, gués du lendemain matin.
-function buildNight(d, ti){
+function buildNight(d, ti, lat, lon){
   const D = d.daily, H = d.hourly;
   const now = new Date();
   // le matin (avant midi), « cette nuit » = celle commencée la veille au soir
@@ -497,7 +501,7 @@ function buildNight(d, ti){
 
   // marées du lendemain (Hornstrandir) : le timing de départ se décide la veille au soir
   let fordHtml = "";
-  const tTom = TIDES[d1];
+  const tTom = tidesHere(lat,lon) ? TIDES[d1] : null;
   if(tTom){
     fordHtml += `<div class="banner info"><span class="bi">🌊</span><div><b>Marées demain</b> (réf. Ísafjörður) · basse <b>${tTom.low.join("</b> · <b>")}</b> · haute ${tTom.high.join(" · ")}<br><span class="sub">${tTom.tip}</span></div></div>`;
   }
@@ -590,7 +594,7 @@ function render(d, lat, lon, name, meta){
   if(meta && meta.alert){
     banners += `<div class="banner warn"><span class="bi">⏰</span><div>${meta.alert}</div></div>`;
   }
-  const tide = TIDES[D.time[ti]];
+  const tide = tidesHere(lat,lon) ? TIDES[D.time[ti]] : null;
   if(tide){
     banners += `<div class="banner info"><span class="bi">🌊</span><div><b>Marées</b> (réf. Ísafjörður) · basse <b>${tide.low.join("</b> · <b>")}</b> · haute ${tide.high.join(" · ")}<br><span class="sub">${tide.tip}</span></div></div>`;
   }
@@ -632,7 +636,7 @@ function render(d, lat, lon, name, meta){
     daylight = `<div class="daylight">☀ <b>${hhmm(D.sunrise[ti])}</b> → <b>${hhmm(D.sunset[ti])}</b> · ~${dh}h${pad(dm)} de lumière</div>`;
   }
 
-  const nightHtml = document.body.classList.contains("night") ? buildNight(d, ti) : "";
+  const nightHtml = document.body.classList.contains("night") ? buildNight(d, ti, lat, lon) : "";
   let html = banners + nightHtml + `<div class="hero" style="--verdict:${v0.col}">
     <div class="h-eyebrow">${fmtDay(D.time[ti],0)}</div>
     <div class="h-cond">
@@ -661,7 +665,7 @@ function render(d, lat, lon, name, meta){
   for(let i=ti+1;i<D.time.length;i++){
     const v = verdict(D.wind_gusts_10m_max[i]);
     const [desc,gl] = wmo(D.weather_code[i]);
-    const td = TIDES[D.time[i]];
+    const td = tidesHere(lat,lon) ? TIDES[D.time[i]] : null;
     html += `<div class="day" style="--verdict:${v.col}">
       <div class="d-left">
         <div class="d-date">${fmtDay(D.time[i],i-ti)}</div>
