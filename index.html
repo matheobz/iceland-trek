@@ -175,7 +175,6 @@
   .d-gust.warn{color:var(--sand)} .d-gust.bad{color:var(--lava)}
   .d-glabel{font-family:"JetBrains Mono";font-size:9.5px;letter-spacing:.06em;text-transform:uppercase;color:var(--mute-2);margin-top:2px}
   .d-precip{font-family:"JetBrains Mono";font-size:11px;color:var(--mute);margin-top:3px}
-  .d-tide{font-family:"JetBrains Mono";font-size:10.5px;color:var(--ice);margin-top:3px;letter-spacing:.01em}
 
   .legend{margin-top:20px;font-family:"JetBrains Mono";font-size:11px;color:var(--mute-2);line-height:1.7;letter-spacing:.02em}
   .legend b{color:var(--moss);font-weight:500}
@@ -665,7 +664,6 @@ function render(d, lat, lon, name, meta){
   for(let i=ti+1;i<D.time.length;i++){
     const v = verdict(D.wind_gusts_10m_max[i]);
     const [desc,gl] = wmo(D.weather_code[i]);
-    const td = tidesHere(lat,lon) ? TIDES[D.time[i]] : null;
     html += `<div class="day" style="--verdict:${v.col}">
       <div class="d-left">
         <div class="d-date">${fmtDay(D.time[i],i-ti)}</div>
@@ -674,8 +672,7 @@ function render(d, lat, lon, name, meta){
       <div class="d-mid">
         <div class="d-glyph">${gl}</div>
         <div><div class="d-temp">${r(D.temperature_2m_max[i])}°<span class="lo"> / ${r(D.temperature_2m_min[i])}°</span></div>
-        <div class="d-precip">${desc} · ${r(D.precipitation_sum[i],1)} mm</div>
-        ${td ? `<div class="d-tide">🌊 basse ${td.low.join(" · ")} — haute ${td.high.join(" · ")}</div>` : ""}</div>
+        <div class="d-precip">${desc} · ${r(D.precipitation_sum[i],1)} mm</div></div>
       </div>
       <div class="d-right">
         <div class="d-gust ${cls(D.wind_gusts_10m_max[i])}">${r(D.wind_gusts_10m_max[i])}<span style="font-size:11px;color:var(--mute);font-weight:400"> m/s</span></div>
