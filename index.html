@@ -254,7 +254,7 @@
       <div class="tag">Veður · trek IS</div>
     </div>
   </div>
-  <p class="sub">Météo de marche — aujourd'hui + 2 jours. Le vent décide.</p>
+  <p class="sub">Météo de marche — le jour de l'étape + 2 suivants. Le vent décide.</p>
 
   <div class="loc">
     <div class="loc-row">
@@ -419,11 +419,21 @@ const cls = g => g>=20 ? "bad" : g>=15 ? "warn" : "";
 const pad = n => String(n).padStart(2,"0");
 const hhmm = iso => iso ? iso.slice(11,16) : "—";   // "2026-08-21T05:30" → "05:30" (heure locale Islande)
 
-function fmtDay(iso, i){
-  const d = new Date(iso+"T12:00:00");
-  if(i===0) return "Aujourd'hui";
-  if(i===1) return "Demain";
-  return d.toLocaleDateString("fr-FR",{weekday:"long", day:"numeric", month:"short"});
+// Libellé d'un jour par rapport à la vraie date du téléphone (pas à la position dans le tableau) :
+// « Aujourd'hui » / « Demain » seulement si c'est vraiment le cas, sinon le jour en toutes lettres.
+function fmtDay(iso){
+  const now = new Date();
+  const t0 = `${now.getFullYear()}-${pad(now.getMonth()+1)}-${pad(now.getDate())}`;
+  const tm = new Date(now.getFullYear(), now.getMonth(), now.getDate()+1);   // sûr même les jours à 23/25 h
+  const t1 = `${tm.getFullYear()}-${pad(tm.getMonth()+1)}-${pad(tm.getDate())}`;
+  if(iso===t0) return "Aujourd'hui";
+  if(iso===t1) return "Demain";
+  return new Date(iso+"T12:00:00").toLocaleDateString("fr-FR",{weekday:"long", day:"numeric", month:"short"});
+}
+// déclinaison en complément de phrase : « aujourd'hui » / « demain » / « du samedi 16 août »
+function relDay(iso){
+  const f = fmtDay(iso);
+  return f==="Aujourd'hui" ? "aujourd'hui" : f==="Demain" ? "demain" : "du "+f;
 }
 
 const out = document.getElementById("out");
@@ -442,8 +452,10 @@ function nightVerdict(g){
 function buildNight(d, ti, lat, lon){
   const D = d.daily, H = d.hourly;
   const now = new Date();
-  // le matin (avant midi), « cette nuit » = celle commencée la veille au soir
-  const nsi = now.getHours() < 12 ? ti - 1 : ti;
+  const todayStr = `${now.getFullYear()}-${pad(now.getMonth()+1)}-${pad(now.getDate())}`;
+  // ancré sur aujourd'hui et avant midi : « cette nuit » = celle commencée la veille au soir ;
+  // ancré sur une étape à venir : la nuit affichée est celle de l'étape.
+  const nsi = (D.time[ti]===todayStr && now.getHours() < 12) ? ti - 1 : ti;
   if(nsi < 0 || nsi + 1 >= D.time.length) return "";
   const d0 = D.time[nsi], d1 = D.time[nsi+1];
   const idx = [];
@@ -498,11 +510,13 @@ function buildNight(d, ti, lat, lon){
     auroraHtml = `<div class="banner info"><span class="bi">😴</span><div><b>Pas de guet possible</b> — le ciel ne devient pas noir avant le J6 (17 août). Masque de sommeil et dodo.</div></div>`;
   }
 
-  // marées du lendemain (Hornstrandir) : le timing de départ se décide la veille au soir
+  // marées du lendemain (Hornstrandir) : le timing de départ se décide la veille au soir.
+  // relDay(d1) garde le libellé honnête quand la vue est ancrée sur une étape future
+  // (« demain » seulement si c'est vraiment demain, sinon la date en toutes lettres).
   let fordHtml = "";
   const tTom = tidesHere(lat,lon) ? TIDES[d1] : null;
   if(tTom){
-    fordHtml += `<div class="banner info"><span class="bi">🌊</span><div><b>Marées demain</b> (réf. Ísafjörður) · basse <b>${tTom.low.join("</b> · <b>")}</b> · haute ${tTom.high.join(" · ")}<br><span class="sub">${tTom.tip}</span></div></div>`;
+    fordHtml += `<div class="banner info"><span class="bi">🌊</span><div><b>Marées ${relDay(d1)}</b> (réf. Ísafjörður) · basse <b>${tTom.low.join("</b> · <b>")}</b> · haute ${tTom.high.join(" · ")}<br><span class="sub">${tTom.tip}</span></div></div>`;
   }
   // gués du lendemain matin : estimation à partir de la pluie de la journée + de la nuit
   for(const s of STAGES.filter(s=>s.iso===d1 && s.ford)){
@@ -510,7 +524,7 @@ function buildNight(d, ti, lat, lon){
     let fc="go", fm="Niveau bas probable au petit matin.";
     if(tot>=10){ fc="bad"; fm="Niveau haut probable — traverse au plus tôt (minimum du matin) ou attends la décrue."; }
     else if(tot>=3){ fc="warn"; fm="Niveau en hausse possible — sonde avant d'engager, détache la ceinture du sac."; }
-    fordHtml += `<div class="banner ${fc}"><span class="bi">🌊</span><div><b>Gué demain (J${s.j}) :</b> ${s.ford}<br>`
+    fordHtml += `<div class="banner ${fc}"><span class="bi">🌊</span><div><b>Gué ${relDay(d1)} (J${s.j}) :</b> ${s.ford}<br>`
       + `<span class="sub">${fm} ≈${r(tot,1)} mm de pluie (journée + nuit). Rivière glaciaire : niveau minimal tôt le matin, maximal en fin d'après-midi.</span></div></div>`;
   }
 
@@ -518,8 +532,9 @@ function buildNight(d, ti, lat, lon){
   const gc = gmax>=20?"bad":gmax>=15?"warn":"";
   const fD = (iso,o)=>new Date(iso+"T12:00:00").toLocaleDateString("fr-FR",o);
   const cmAll = hasCloud ? Math.round(idx.reduce((a,i)=>a+(H.cloud_cover[i]||0),0)/idx.length) : null;
+  const nightLbl = (d0===todayStr || d1===todayStr) ? "Cette nuit" : "Nuit du";
   return `<div class="hero" style="--verdict:${v.col}">
-    <div class="h-eyebrow">🌙 Cette nuit · ${fD(d0,{weekday:"short",day:"numeric"})} → ${fD(d1,{weekday:"short",day:"numeric",month:"short"})}</div>
+    <div class="h-eyebrow">🌙 ${nightLbl} · ${fD(d0,{weekday:"short",day:"numeric"})} → ${fD(d1,{weekday:"short",day:"numeric",month:"short"})}</div>
     <div class="verdict" style="--vline:${v.line}">
       <div class="v-icon" style="--verdict:${v.col}"><svg viewBox="0 0 24 24">${V_ICON[v.icon]}</svg></div>
       <div class="v-txt"><div class="v-label">${v.label}</div><div class="v-note">${v.note}</div></div>
@@ -536,11 +551,13 @@ function buildNight(d, ti, lat, lon){
 }
 
 // past_days=1 → on récupère aussi la veille (pour le risque de gué) ; sunrise/sunset/daylight pour la lumière.
+// forecast_days=9 → permet d'ancrer la vue sur la date d'une étape à venir (fiabilité décroissante
+// au-delà de 3 j) en gardant panneau nuit + 2 cartes même pour une étape à J+6.
 function buildUrl(lat, lon){
   return `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}`
     + `&daily=weather_code,temperature_2m_max,temperature_2m_min,precipitation_sum,wind_speed_10m_max,wind_gusts_10m_max,wind_direction_10m_dominant,sunrise,sunset,daylight_duration`
     + `&hourly=temperature_2m,weather_code,wind_gusts_10m,precipitation,cloud_cover`
-    + `&wind_speed_unit=ms&timezone=auto&past_days=1&forecast_days=3`;
+    + `&wind_speed_unit=ms&timezone=auto&past_days=1&forecast_days=9`;
 }
 
 async function load(lat, lon, name, stageKey, meta){
@@ -564,7 +581,8 @@ async function load(lat, lon, name, stageKey, meta){
     if(cached && cached.data){
       const h = Math.round((Date.now()-cached.ts)/3600000);
       const when = h<1 ? "il y a moins d'1 h" : `il y a ${h} h`;
-      render(cached.data, cached.lat, cached.lon, cached.name, cached.meta);
+      // meta frais en priorité : les payloads d'une ancienne version peuvent ne pas avoir l'iso de l'étape
+      render(cached.data, cached.lat, cached.lon, cached.name, meta || cached.meta);
       out.insertAdjacentHTML("afterbegin",
         `<div class="err" style="background:rgba(232,162,74,.08);border-color:rgba(232,162,74,.4);color:#F2C98A">
         <b>Hors-ligne.</b> Pas de réseau — voici la météo enregistrée (${when}). Relance dès que t'as du signal.</div>`);
@@ -582,14 +600,26 @@ function render(d, lat, lon, name, meta){
     ? `Étape · <b>${name}</b>`
     : `Position · <b>${r(lat,3)}, ${r(lon,3)}</b>`;
 
-  // index d'aujourd'hui (les tableaux commencent la veille à cause de past_days=1)
+  // Jour affiché = la date de l'étape sélectionnée si la prévision la couvre, sinon aujourd'hui.
+  // Une étape déjà passée n'ancre jamais sur la météo d'hier (past_days=1 la garde dans le tableau) :
+  // on retombe sur aujourd'hui avec un bandeau. (les tableaux commencent la veille)
   const now = new Date();
   const todayStr = `${now.getFullYear()}-${pad(now.getMonth()+1)}-${pad(now.getDate())}`;
-  let ti = D.time.indexOf(todayStr);
-  if(ti < 0) ti = D.time.length > 3 ? 1 : 0;   // repli : 2e jour si veille présente, sinon 1er
+  let ti = meta && meta.iso && meta.iso >= todayStr ? D.time.indexOf(meta.iso) : -1;
+  let offHint = "";
+  if(ti < 0){
+    ti = D.time.indexOf(todayStr);
+    if(ti < 0) ti = D.time.length > 3 ? 1 : 0;   // cache périmé : repli sur le jour du fetch
+    if(meta && meta.iso && meta.iso !== D.time[ti]){
+      const dd = new Date(meta.iso+"T12:00:00").toLocaleDateString("fr-FR",{weekday:"long",day:"numeric",month:"long"});
+      offHint = meta.iso < todayStr
+        ? `<div class="banner info"><span class="bi">📅</span><div>Étape du <b>${dd}</b> déjà passée — affichage de la météo ${relDay(D.time[ti])} à cet endroit.</div></div>`
+        : `<div class="banner info"><span class="bi">📅</span><div>Pas de prévision pour le <b>${dd}</b> dans les données disponibles — affichage de la météo ${relDay(D.time[ti])} à cet endroit.</div></div>`;
+    }
+  }
 
   // --- BANNERS (rappels horaires + gué) ---
-  let banners = "";
+  let banners = offHint;
   if(meta && meta.alert){
     banners += `<div class="banner warn"><span class="bi">⏰</span><div>${meta.alert}</div></div>`;
   }
@@ -612,11 +642,11 @@ function render(d, lat, lon, name, meta){
   const [desc0,gl0] = wmo(D.weather_code[ti]);
   const gc0 = cls(D.wind_gusts_10m_max[ti]);
 
-  // hourly for today
+  // strip horaire du jour affiché
   let hourly = "";
   for(let i=0;i<H.time.length;i++){
+    if(!H.time[i].startsWith(D.time[ti])) continue;
     const t = new Date(H.time[i]);
-    if(t.toDateString()!==now.toDateString()) continue;
     if(t.getHours()%3!==0) continue;
     const [,g] = wmo(H.weather_code[i]);
     const gust = H.wind_gusts_10m[i];
@@ -637,7 +667,7 @@ function render(d, lat, lon, name, meta){
 
   const nightHtml = document.body.classList.contains("night") ? buildNight(d, ti, lat, lon) : "";
   let html = banners + nightHtml + `<div class="hero" style="--verdict:${v0.col}">
-    <div class="h-eyebrow">${fmtDay(D.time[ti],0)}</div>
+    <div class="h-eyebrow">${fmtDay(D.time[ti])}</div>
     <div class="h-cond">
       <div class="h-glyph">${gl0}</div>
       <div>
@@ -659,14 +689,14 @@ function render(d, lat, lon, name, meta){
     <div class="hourly">${hourly||""}</div>
   </div>`;
 
-  // --- NEXT 2 DAYS ---
+  // --- LES 2 JOURS SUIVANTS ---
   html += `<div class="days">`;
-  for(let i=ti+1;i<D.time.length;i++){
+  for(let i=ti+1;i<Math.min(D.time.length, ti+3);i++){
     const v = verdict(D.wind_gusts_10m_max[i]);
     const [desc,gl] = wmo(D.weather_code[i]);
     html += `<div class="day" style="--verdict:${v.col}">
       <div class="d-left">
-        <div class="d-date">${fmtDay(D.time[i],i-ti)}</div>
+        <div class="d-date">${fmtDay(D.time[i])}</div>
         <div class="d-verdict">${v.label}</div>
       </div>
       <div class="d-mid">
@@ -699,7 +729,7 @@ stageSel.onchange = ()=>{
   const s = STAGES[i];
   stageHint.hidden=false;
   stageHint.innerHTML = `Étape <b>J${s.j}</b> · ${s.d} · ${s.n}`;
-  load(s.lat, s.lon, `J${s.j} · ${s.n}`, s.id, {ford:s.ford||null, alert:s.alert||null});
+  load(s.lat, s.lon, `J${s.j} · ${s.n}`, s.id, {ford:s.ford||null, alert:s.alert||null, iso:s.iso});
 };
 function resetStage(){ stageSel.value=""; stageHint.hidden=true; }
 
@@ -735,7 +765,7 @@ cacheBtn.onclick = async ()=>{
       const res = await fetch(buildUrl(s.lat, s.lon));
       if(res.ok){
         const data = await res.json();
-        const payload = {data, lat:s.lat, lon:s.lon, name:`J${s.j} · ${s.n}`, meta:{ford:s.ford||null, alert:s.alert||null}, ts:Date.now()};
+        const payload = {data, lat:s.lat, lon:s.lon, name:`J${s.j} · ${s.n}`, meta:{ford:s.ford||null, alert:s.alert||null, iso:s.iso}, ts:Date.now()};
         try{ localStorage.setItem("fc:"+s.id, JSON.stringify(payload)); }catch(_){}
         ok++;
       }
